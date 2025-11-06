@@ -34,3 +34,9 @@ docker-compose exec web python manage.py sqlmigrate app_name 0001
 ```
 docker-compose exec web python manage.py sqlmigrate app_name 0001 > app_name_migration.sql
 ```
+
+### Test run
+
+```
+ python -m django_project.utils.jax_examples
+```
