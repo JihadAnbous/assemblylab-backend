@@ -49,17 +49,18 @@ def dot_product(vector1, vector2):
     return result
 
 
-# Transform a jax array
-def transform(a, theta, Sx, Sy):
-    # Throw an error if the input matrix 'a' is not a numpy array
-    if not isinstance(a, np.ndarray):
-        raise ValueError("Input 'a' must be a numpy array.")
+def transform(matrix, angle, Sx, Sy):
+    # matrix must be a matrix formed of jax 1D arays: [x, y]
+    # angle must be the angle of rotation in radians
+    # Sx and Sy are the linear transformation values in the x and y directions
+    # The resultant is the transformed matrix formed of jax 1D arays: [x, y]
 
-    # Define the transformation matrix t (rotation + translation)
-    t = np.array(
-        [[cosd(theta), -sind(theta), Sx], [sind(theta), cosd(theta), Sy], [0, 0, 1]]
+    t = jnp.array(
+        [
+            [jnp.cos(angle), -jnp.sin(angle), Sx],
+            [jnp.sin(angle), jnp.cos(angle), Sy],
+            [0, 0, 1],
+        ]
     )
-    # Matrix multiplication of t and a (assuming a is a numpy array)
-    b = np.dot(t, a)
-
-    return b
+    result = jnp.round(jnp.dot(t, matrix), decimals=6)
+    return result
