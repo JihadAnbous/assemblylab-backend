@@ -1,34 +1,39 @@
 from django.contrib import admin
 
-from .models import ComponentType, Component, ComponentPoint, ComponentCoordinate
+from .models import Template, Point, Component, Location
 
 # Register your models here.
 
 
-class ComponentCoordinateInline(admin.TabularInline):
-    model = ComponentCoordinate
+class PointInline(admin.TabularInline):
+    model = Point
     extra = 0
 
 
-class ComponentPointInline(admin.TabularInline):
-    model = ComponentPoint
-    extra = 0
-
-
-@admin.register(ComponentType)
-class ComponentTypeAdmin(admin.ModelAdmin):
-    inlines = [ComponentPointInline]
+@admin.register(Template)
+class TemplateAdmin(admin.ModelAdmin):
+    inlines = [PointInline]
     list_display = (
         "id",
         "name",
+        "created_by",
+        "created_at",
     )
+
+
+class LocationInline(admin.TabularInline):
+    model = Location
+    extra = 0
 
 
 @admin.register(Component)
 class ComponentAdmin(admin.ModelAdmin):
-    inlines = [ComponentCoordinateInline]
+    inlines = [LocationInline]
     list_display = (
         "id",
-        "type",
-        "name",
+        "template",
+        "number",
+        "description",
+        "created_by",
+        "created_at",
     )

@@ -1,21 +1,51 @@
 import jax
 import jax.numpy as jnp
 
+from .helpers import vector, vector_magnitude, cross_product, dot_product
 
-def constraint_distance(given_point, constrained_point, given_distance):
-    # given_point must be a 1x2 jax array [mm]
-    # constrained_point must be a 1x2 jax array [mm]
-    # given_distance must be a float [mm]
-    x1 = given_point[0]
-    y1 = given_point[1]
-    x = constrained_point[0]
-    y = constrained_point[1]
-    function = jnp.sqrt((x - x1) ** 2 + (y - y1) ** 2) - given_distance
+
+def constraint_coincident(point1, point2):
+    # point1 must be a jax 1D array: [x, y]
+    # point2 must be a jax 1D array: [x, y]
+    # Constraint satisfied when function = 0
+    v = vector(point1, point2)
+    function = vector_magnitude(v)
     return function
 
 
-def constraint_angle(vector1, vector2, given_angle):
-    # vector1 must be a 1x2 jax array [mm]
-    # vector2 must be a 1x2 jax array [mm]
-    # given_angle must be a float [radians]
-    return None
+def constraint_distance(point1, point2, distance):
+    # point1 must be a jax 1D array: [x, y]
+    # point2 must be a jax 1D array: [x, y]
+    # given_distance must be a float
+    # Constraint satisfied when function = 0
+    v = vector(point1, point2)
+    v_mag = vector_magnitude(v)
+    function = v_mag - distance
+    return function
+
+
+def constraint_angle(vector1, vector2, angle):
+    # vector1 must be a jax 1D array: [x, y]
+    # vector2 must be a jax 1D array: [x, y]
+    # angle must be a float [radians]
+    # Constraint satisfied when function = 0
+    u = dot_product(vector1, vector2)
+    v = vector_magnitude(vector1) * vector_magnitude(vector2)
+    function = jnp.cos(angle) - u / v
+    return function
+
+
+def constraint_parallel(vector1, vector2):
+    # vector1 must be a jax 1D array: [x, y]
+    # vector2 must be a jax 1D array: [x, y]
+    # Constraint satisfied when function = 0
+    function = cross_product(vector1, vector2)
+    return function
+
+
+def constraint_perpendicular(vector1, vector2):
+    # vector1 must be a jax 1D array: [x, y]
+    # vector2 must be a jax 1D array: [x, y]
+    # Constraint satisfied when function = 0
+    function = dot_product(vector1, vector2)
+    return function
