@@ -24,6 +24,11 @@ def constraint_distance(point1, point2, distance):
     return function
 
 
+def constraint_variable_distance(point1, point2, minimum, maximum):
+    function = 0
+    return function
+
+
 def constraint_angle(vector1, vector2, angle):
     # vector1 must be a jax 1D array: [x, y]
     # vector2 must be a jax 1D array: [x, y]
@@ -32,6 +37,11 @@ def constraint_angle(vector1, vector2, angle):
     u = dot_product(vector1, vector2)
     v = vector_magnitude(vector1) * vector_magnitude(vector2)
     function = jnp.cos(angle) - u / v
+    return function
+
+
+def constraint_variable_angle(vector1, vector2, minimum, maximum):
+    function = 0
     return function
 
 

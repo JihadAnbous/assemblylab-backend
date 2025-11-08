@@ -20,6 +20,7 @@ class AssemblyAdmin(admin.ModelAdmin):
         "created_by",
         "created_at",
     )
+    readonly_fields = ("solved",)
 
 
 class AssemblyPointInline(admin.TabularInline):

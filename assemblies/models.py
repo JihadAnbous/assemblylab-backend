@@ -14,6 +14,7 @@ class Assembly(models.Model):
     name = models.CharField(max_length=100, unique=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    solved = models.BooleanField(default=False, editable=False)
 
     class Meta:
         verbose_name_plural = "Assemblies"
