@@ -63,3 +63,21 @@ print(f"Constraint value: {result}")  # Should be 0.0 (constraint satisfied)
 # Derive the function
 constraint_distance_gradient = jax.grad(constraint_distance)
 print(constraint_distance_gradient)
+
+current_angle = 45
+minimum = 0
+maximum = 90
+# Example:
+jnp.where(
+    current_angle < minimum,
+    minimum - current_angle,  # returned if condition is True
+    0.0,  # returned if condition is False
+)
+
+current_angle_cos = 25
+# Example:
+jnp.clip(current_angle_cos, -1.0, 1.0)
+
+# If current_angle_cos = 1.05  → returns 1.0 (clamped to max)
+# If current_angle_cos = 0.5   → returns 0.5 (unchanged)
+# If current_angle_cos = -1.2  → returns -1.0 (clamped to min)
