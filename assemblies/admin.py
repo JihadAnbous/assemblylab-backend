@@ -1,6 +1,15 @@
 from django.contrib import admin
 
 from .models import Assembly, AssemblyComponent, AssemblyPoint
+from constraints.admin import (
+    CoincidentConstraintInline,
+    DistanceConstraintInline,
+    AngleConstraintInline,
+    ParallelConstraintInline,
+    PerpendicularConstraintInline,
+    VariableDistanceConstraintInline,
+    VariableAngleConstraintInline,
+)
 
 
 # Register your models here.
@@ -13,7 +22,16 @@ class AssemblyComponentInline(admin.TabularInline):
 
 @admin.register(Assembly)
 class AssemblyAdmin(admin.ModelAdmin):
-    inlines = [AssemblyComponentInline]
+    inlines = [
+        AssemblyComponentInline,
+        CoincidentConstraintInline,
+        DistanceConstraintInline,
+        AngleConstraintInline,
+        ParallelConstraintInline,
+        PerpendicularConstraintInline,
+        VariableDistanceConstraintInline,
+        VariableAngleConstraintInline,
+    ]
     list_display = (
         "id",
         "name",

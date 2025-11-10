@@ -12,7 +12,7 @@ class Constraint(models.Model):
     assembly = models.ForeignKey(
         Assembly, on_delete=models.CASCADE, related_name="assembly_constraint"
     )
-    type = models.CharField(max_length=50)
+    type = models.CharField(max_length=50, editable=False)
 
     def __str__(self):
         return f"{self.assembly}-{self.type}"
@@ -133,3 +133,47 @@ class PerpendicularConstraint(Constraint):
         self.type = "PerpendicularConstraint"
         # Save the instance
         super(PerpendicularConstraint, self).save(*args, **kwargs)
+
+
+class VariableDistanceConstraint(Constraint):
+    line = models.ForeignKey(
+        ReferenceLine,
+        on_delete=models.CASCADE,
+        related_name="line_variabledistanceconstraint",
+    )
+    minimum = models.FloatField(validators=[MinValueValidator(0.0)])
+    maximum = models.FloatField(validators=[MinValueValidator(0.0)])
+
+    def __str__(self):
+        return f"{self.type}"
+
+    def clean(self):
+        super().clean()
+        # Additional validation
+
+    def save(self, *args, **kwargs):
+        self.type = "VariableDistanceConstraint"
+        # Save the instance
+        super(VariableDistanceConstraint, self).save(*args, **kwargs)
+
+
+class VariableAngleConstraint(Constraint):
+    angle = models.ForeignKey(
+        ReferenceAngle,
+        on_delete=models.CASCADE,
+        related_name="angle_variableangleconstraint",
+    )
+    minimum = models.FloatField(validators=[MinValueValidator(0.0)])
+    maximum = models.FloatField(validators=[MinValueValidator(0.0)])
+
+    def __str__(self):
+        return f"{self.type}"
+
+    def clean(self):
+        super().clean()
+        # Additional validation
+
+    def save(self, *args, **kwargs):
+        self.type = "VariableAngleConstraint"
+        # Save the instance
+        super(VariableAngleConstraint, self).save(*args, **kwargs)
