@@ -9,11 +9,20 @@ from components.models import Component, Location, UNITS_CHOICES
 
 # Create your models here.
 
+ASSEMBLY_STATUS_CHOICES = [
+    ("Not constrained", "Not constrained"),
+    ("Partially constrained", "Partially constrained"),
+    ("Fully constrained", "Fully constrained"),
+]
+
 
 class Assembly(models.Model):
     name = models.CharField(max_length=100, unique=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=100, choices=ASSEMBLY_STATUS_CHOICES, editable=False
+    )
     solved = models.BooleanField(default=False, editable=False)
 
     class Meta:

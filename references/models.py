@@ -47,7 +47,7 @@ class ReferenceLine(Reference):
         if self.point1.fixed and self.point2.fixed is True:
             self.fixed = True
         if self.fixed is True:
-            # Try to fix self.x and self.y to the assembly component's matrix - packing/unpacking functions
+            # Create a variable that stores line colour? Bold = Fixed/constrained ??
             pass
         self.type = "ReferenceLine"
         # Save the instance
