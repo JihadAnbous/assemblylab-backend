@@ -35,6 +35,22 @@ def constraint_angle(vector1, vector2, angle):
     return function
 
 
+def constraint_parallel(vector1, vector2):
+    # vector1 must be a jax 1D array: [x, y]
+    # vector2 must be a jax 1D array: [x, y]
+    # Constraint satisfied when function = 0
+    function = cross_product(vector1, vector2)
+    return function
+
+
+def constraint_perpendicular(vector1, vector2):
+    # vector1 must be a jax 1D array: [x, y]
+    # vector2 must be a jax 1D array: [x, y]
+    # Constraint satisfied when function = 0
+    function = dot_product(vector1, vector2)
+    return function
+
+
 def constraint_variable_distance(point1, point2, minimum, maximum):
     # vector1 must be a jax 1D array: [x, y]
     # vector2 must be a jax 1D array: [x, y]
@@ -78,20 +94,4 @@ def constraint_variable_angle(vector1, vector2, minimum, maximum):
             0.0,  # If True, function = 0 and constraint is satisfied
         ),
     )
-    return function
-
-
-def constraint_parallel(vector1, vector2):
-    # vector1 must be a jax 1D array: [x, y]
-    # vector2 must be a jax 1D array: [x, y]
-    # Constraint satisfied when function = 0
-    function = cross_product(vector1, vector2)
-    return function
-
-
-def constraint_perpendicular(vector1, vector2):
-    # vector1 must be a jax 1D array: [x, y]
-    # vector2 must be a jax 1D array: [x, y]
-    # Constraint satisfied when function = 0
-    function = dot_product(vector1, vector2)
     return function

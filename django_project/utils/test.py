@@ -65,3 +65,7 @@ variable_distance_satisfied = constraint_variable_distance(a, b, minimum, maximu
 print("Variable distance satisfied: \n", variable_distance_satisfied)
 variable_distance_violated = constraint_variable_distance(a, c, minimum, maximum)
 print("Variable distance violated: \n", variable_distance_violated)
+
+# Derivate variable distance constraint
+derivative = jax.grad(constraint_variable_distance)
+print("Variable distance derivative: \n", derivative)
