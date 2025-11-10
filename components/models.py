@@ -69,7 +69,7 @@ UNITS_CHOICES = [
 
 class Location(models.Model):
     component = models.ForeignKey(
-        Component, on_delete=models.CASCADE, related_name="component_pointdata"
+        Component, on_delete=models.CASCADE, related_name="component_location"
     )
     point = models.ForeignKey(
         Point,
