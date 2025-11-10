@@ -41,3 +41,13 @@ class ReferenceAngleAdmin(admin.ModelAdmin):
         "fixed",
     )
     read_only = ("type", "fixed")
+
+
+class ReferenceLineInline(admin.TabularInline):
+    model = ReferenceLine
+    extra = 0
+
+
+class ReferenceAngleInline(admin.TabularInline):
+    model = ReferenceAngle
+    extra = 0

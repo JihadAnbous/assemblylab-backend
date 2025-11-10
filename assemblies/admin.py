@@ -10,6 +10,7 @@ from constraints.admin import (
     VariableDistanceConstraintInline,
     VariableAngleConstraintInline,
 )
+from references.admin import ReferenceLineInline, ReferenceAngleInline
 
 
 # Register your models here.
@@ -24,6 +25,8 @@ class AssemblyComponentInline(admin.TabularInline):
 class AssemblyAdmin(admin.ModelAdmin):
     inlines = [
         AssemblyComponentInline,
+        ReferenceLineInline,
+        ReferenceAngleInline,
         CoincidentConstraintInline,
         DistanceConstraintInline,
         AngleConstraintInline,
