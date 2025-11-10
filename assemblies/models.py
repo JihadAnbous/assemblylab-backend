@@ -31,13 +31,10 @@ class AssemblyComponent(models.Model):
         Component, on_delete=models.CASCADE, related_name="component_assemblycomponent"
     )
     fixed = models.BooleanField(default=False)
-    translation_point = models.ForeignKey(
+    transformation_point = models.ForeignKey(
         Location,
         on_delete=models.CASCADE,
-        related_name="translationpoint_assemblycomponent",
-    )
-    pivot_point = models.ForeignKey(
-        Location, on_delete=models.CASCADE, related_name="pivotpoint_assemblycomponent"
+        related_name="transformationpoint_assemblycomponent",
     )
     x_translation = models.FloatField(blank=True, null=True)
     y_translation = models.FloatField(blank=True, null=True)
@@ -54,12 +51,10 @@ class AssemblyComponent(models.Model):
     def clean(self):
         super().clean()
         # Additional validation
-        if self.translation_point.component != self.component:
+        if self.transformation_point.component != self.component:
             raise ValidationError(
-                "This translation point does not belong to this component."
+                "This transformation point does not belong to this component."
             )
-        if self.pivot_point.component != self.component:
-            raise ValidationError("This pivot point does not belong to this component.")
 
     def save(self, *args, **kwargs):
         if self.x_translation is None:
