@@ -24,11 +24,6 @@ def constraint_distance(point1, point2, distance):
     return function
 
 
-def constraint_variable_distance(point1, point2, minimum, maximum):
-    function = 0
-    return function
-
-
 def constraint_angle(vector1, vector2, angle):
     # vector1 must be a jax 1D array: [x, y]
     # vector2 must be a jax 1D array: [x, y]
@@ -40,6 +35,29 @@ def constraint_angle(vector1, vector2, angle):
     return function
 
 
+def constraint_variable_distance(point1, point2, minimum, maximum):
+    # vector1 must be a jax 1D array: [x, y]
+    # vector2 must be a jax 1D array: [x, y]
+    # minimum, maximum must be floats [mm]
+    # Constraint satisfied when function = 0
+
+    v = vector(point1, point2)
+    current_distance = vector_magnitude(v)
+    # If current_distance is < minimum
+    function = jnp.where(
+        current_distance < minimum,
+        minimum - current_distance,  # If False, function = minimum - current_distance
+        jnp.where(
+            current_distance
+            > maximum,  # If True, also check if current_distance > maximum,
+            current_distance
+            - maximum,  # If False, function = current_distance - maximum
+            0,
+        ),  # If True, function = 0 and constraint is satisfied
+    )
+    return function
+
+
 def constraint_variable_angle(vector1, vector2, minimum, maximum):
     # vector1 must be a jax 1D array: [x, y]
     # vector2 must be a jax 1D array: [x, y]
@@ -48,20 +66,16 @@ def constraint_variable_angle(vector1, vector2, minimum, maximum):
 
     u = dot_product(vector1, vector2)
     v = vector_magnitude(vector1) * vector_magnitude(vector2)
-    current_angle_cos = u / v
+    current_angle = jnp.arccos(u / v)
 
-    # Convert to actual angle for comparison
-    current_angle = jnp.arccos(jnp.clip(current_angle_cos, -1.0, 1.0))
-
-    # Return 0 if within bounds, otherwise return violation amount
-    # This creates a penalty that becomes 0 when constraint is satisfied
+    # If current_angle is < minimum
     function = jnp.where(
         current_angle < minimum,
-        minimum - current_angle,  # Violation below minimum
-        jnp.where(
+        minimum - current_angle,  # If False, function = minimum - current_angle
+        jnp.where(  # If True, also check if current_angle > maximum,
             current_angle > maximum,
-            current_angle - maximum,  # Violation above maximum
-            0.0,  # Within bounds
+            current_angle - maximum,  # If False, function = current_angle - maximum
+            0.0,  # If True, function = 0 and constraint is satisfied
         ),
     )
     return function

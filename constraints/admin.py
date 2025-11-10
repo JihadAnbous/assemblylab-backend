@@ -5,6 +5,8 @@ from .models import (
     CoincidentConstraint,
     DistanceConstraint,
     AngleConstraint,
+    ParallelConstraint,
+    PerpendicularConstraint,
 )
 
 # Register your models here.
@@ -34,4 +36,16 @@ class DistanceConstraintAdmin(admin.ModelAdmin):
 @admin.register(AngleConstraint)
 class AngleConstraintAdmin(admin.ModelAdmin):
     list_display = ("id", "assembly", "type", "angle", "value")
+    readonly_fields = ("type",)
+
+
+@admin.register(ParallelConstraint)
+class ParallelConstraintAdmin(admin.ModelAdmin):
+    list_display = ("id", "assembly", "type", "line1", "line2")
+    readonly_fields = ("type",)
+
+
+@admin.register(PerpendicularConstraint)
+class PerpendicularConstraintAdmin(admin.ModelAdmin):
+    list_display = ("id", "assembly", "type", "line1", "line2")
     readonly_fields = ("type",)

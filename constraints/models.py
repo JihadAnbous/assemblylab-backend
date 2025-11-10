@@ -89,17 +89,47 @@ class AngleConstraint(Constraint):
         super(AngleConstraint, self).save(*args, **kwargs)
 
 
-def constraint_parallel(vector1, vector2):
-    # vector1 must be a jax 1D array: [x, y]
-    # vector2 must be a jax 1D array: [x, y]
-    # Constraint satisfied when function = 0
-    function = cross_product(vector1, vector2)
-    return function
+class ParallelConstraint(Constraint):
+    line1 = models.ForeignKey(
+        ReferenceLine, on_delete=models.CASCADE, related_name="line1_parallelconstraint"
+    )
+    line2 = models.ForeignKey(
+        ReferenceLine, on_delete=models.CASCADE, related_name="line2_parallelconstraint"
+    )
+
+    def __str__(self):
+        return f"{self.type}"
+
+    def clean(self):
+        super().clean()
+        # Additional validation
+
+    def save(self, *args, **kwargs):
+        self.type = "ParallelConstraint"
+        # Save the instance
+        super(ParallelConstraint, self).save(*args, **kwargs)
 
 
-def constraint_perpendicular(vector1, vector2):
-    # vector1 must be a jax 1D array: [x, y]
-    # vector2 must be a jax 1D array: [x, y]
-    # Constraint satisfied when function = 0
-    function = dot_product(vector1, vector2)
-    return function
+class PerpendicularConstraint(Constraint):
+    line1 = models.ForeignKey(
+        ReferenceLine,
+        on_delete=models.CASCADE,
+        related_name="line1_perpendicularconstraint",
+    )
+    line2 = models.ForeignKey(
+        ReferenceLine,
+        on_delete=models.CASCADE,
+        related_name="line2_perpendicularconstraint",
+    )
+
+    def __str__(self):
+        return f"{self.type}"
+
+    def clean(self):
+        super().clean()
+        # Additional validation
+
+    def save(self, *args, **kwargs):
+        self.type = "PerpendicularConstraint"
+        # Save the instance
+        super(PerpendicularConstraint, self).save(*args, **kwargs)
