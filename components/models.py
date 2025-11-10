@@ -1,3 +1,6 @@
+import jax
+import jax.numpy as jnp
+
 from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -79,6 +82,10 @@ class Location(models.Model):
     x = models.FloatField(help_text="[mm]")
     y = models.FloatField(help_text="[mm]")
     units = models.CharField(max_length=6, choices=UNITS_CHOICES, default="mm")
+
+    @property
+    def matrix(self):
+        return jnp.array([self.x, self.y, 1])
 
     def __str__(self):
         return f"{self.point}"

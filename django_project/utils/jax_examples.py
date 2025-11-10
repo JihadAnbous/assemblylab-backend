@@ -21,6 +21,9 @@ print(f"err:\n", err)
 # Dot product
 frr = jnp.dot(arr, crr)
 print(f"frr:\n", frr)
+# Degrees to radians
+a = jnp.deg2rad(45)
+print(f"45 degrees is", a, "radians")
 
 
 # Derivative or gradient - example 1
