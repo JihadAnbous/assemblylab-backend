@@ -25,7 +25,7 @@ class ConstraintAdmin(admin.ModelAdmin):
 
 @admin.register(CoincidentConstraint)
 class CoincidentConstraintAdmin(admin.ModelAdmin):
-    list_display = ("id", "assembly", "type", "point1", "point2")
+    list_display = ("id", "assembly", "type", "reference1", "reference2")
     readonly_fields = ("type",)
 
 

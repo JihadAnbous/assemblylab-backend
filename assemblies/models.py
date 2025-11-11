@@ -72,38 +72,6 @@ class AssemblyComponent(models.Model):
             self.y_translation = 0
         if self.rotation is None:
             self.rotation = 0
+        # If 2 points are fixed then self.fixed = True
         # Save the instance
         super(AssemblyComponent, self).save(*args, **kwargs)
-
-
-class AssemblyPoint(models.Model):
-    component = models.ForeignKey(
-        AssemblyComponent,
-        on_delete=models.CASCADE,
-        related_name="component_assemblypoint",
-    )
-    location = models.ForeignKey(
-        Location, on_delete=models.CASCADE, related_name="location_assemblypoint"
-    )
-    label = models.CharField(max_length=32)
-    fixed = models.BooleanField(default=False, editable=False)
-    x = models.FloatField(blank=True, null=True)
-    y = models.FloatField(blank=True, null=True)
-
-    def __str__(self):
-        return f"{self.component}-{self.label}"
-
-    def clean(self):
-        super().clean()
-        # Additional validation
-        if self.location.component != self.component.component:
-            raise ValidationError("This point does not belong to this component.")
-
-    def save(self, *args, **kwargs):
-        if self.component.fixed is True:
-            self.fixed = True
-        if self.fixed is True:
-            # Try to fix self.x and self.y to the assembly component's matrix
-            pass
-        # Save the instance
-        super(AssemblyPoint, self).save(*args, **kwargs)

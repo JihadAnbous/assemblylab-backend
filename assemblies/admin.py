@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Assembly, AssemblyComponent, AssemblyPoint
+from .models import Assembly, AssemblyComponent
 from constraints.admin import (
     CoincidentConstraintInline,
     DistanceConstraintInline,
@@ -10,7 +10,11 @@ from constraints.admin import (
     VariableDistanceConstraintInline,
     VariableAngleConstraintInline,
 )
-from references.admin import ReferenceLineInline, ReferenceAngleInline
+from references.admin import (
+    ReferencePointInline,
+    ReferenceLineInline,
+    ReferenceAngleInline,
+)
 
 
 # Register your models here.
@@ -25,6 +29,7 @@ class AssemblyComponentInline(admin.TabularInline):
 class AssemblyAdmin(admin.ModelAdmin):
     inlines = [
         AssemblyComponentInline,
+        ReferencePointInline,
         ReferenceLineInline,
         ReferenceAngleInline,
         CoincidentConstraintInline,
@@ -47,14 +52,9 @@ class AssemblyAdmin(admin.ModelAdmin):
     )
 
 
-class AssemblyPointInline(admin.TabularInline):
-    model = AssemblyPoint
-    extra = 0
-
-
 @admin.register(AssemblyComponent)
 class AssemblyComponentAdmin(admin.ModelAdmin):
-    inlines = [AssemblyPointInline]
+    inlines = [ReferencePointInline]
     list_display = (
         "id",
         "assembly",

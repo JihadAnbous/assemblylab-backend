@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Reference, ReferenceLine, ReferenceAngle
+from .models import Reference, ReferencePoint, ReferenceLine, ReferenceAngle
 
 # Register your models here.
 
@@ -15,6 +15,22 @@ class ReferenceAdmin(admin.ModelAdmin):
         "fixed",
     )
     read_only = ("assembly", "type", "label", "fixed")
+
+
+@admin.register(ReferencePoint)
+class ReferencePointAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "assembly",
+        "type",
+        "label",
+        "fixed",
+        "component",
+        "location",
+        "x",
+        "y",
+    )
+    read_only = ("type", "fixed")
 
 
 @admin.register(ReferenceLine)
@@ -41,6 +57,11 @@ class ReferenceAngleAdmin(admin.ModelAdmin):
         "fixed",
     )
     read_only = ("type", "fixed")
+
+
+class ReferencePointInline(admin.TabularInline):
+    model = ReferencePoint
+    extra = 0
 
 
 class ReferenceLineInline(admin.TabularInline):

@@ -1,9 +1,16 @@
-from django.db import models
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 
-from assemblies.models import Assembly, AssemblyPoint
-from references.models import ReferenceLine, ReferenceAngle
+from django.db import models
+
+from assemblies.models import Assembly
+from references.models import Reference, ReferencePoint, ReferenceLine, ReferenceAngle
+
+
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 # Create your models here.
 
@@ -23,15 +30,15 @@ class Constraint(models.Model):
 
 
 class CoincidentConstraint(Constraint):
-    point1 = models.ForeignKey(
-        AssemblyPoint,
+    reference1 = models.ForeignKey(
+        Reference,
         on_delete=models.CASCADE,
-        related_name="point1_coincidentconstraint",
+        related_name="reference1_coincidentconstraint",
     )
-    point2 = models.ForeignKey(
-        AssemblyPoint,
+    reference2 = models.ForeignKey(
+        Reference,
         on_delete=models.CASCADE,
-        related_name="point2_coincidentconstraint",
+        related_name="reference2_coincidentconstraint",
     )
 
     def __str__(self):
@@ -40,9 +47,9 @@ class CoincidentConstraint(Constraint):
     def clean(self):
         super().clean()
         # Additional validation
-        if self.point1 == self.point2:
+        if self.reference1 == self.reference2:
             raise ValidationError(
-                "The selected point is already coincident with itself."
+                "The selected reference is already coincident with itself."
             )
 
     def save(self, *args, **kwargs):
@@ -177,3 +184,16 @@ class VariableAngleConstraint(Constraint):
         self.type = "VariableAngleConstraint"
         # Save the instance
         super(VariableAngleConstraint, self).save(*args, **kwargs)
+
+
+# FixedConstraint (use references, so points, lines and angles are all valid)
+
+# EqualConstraint (use References, so we can use lines or angles. points are invalid.)
+
+# VerticalConstraint (use lines only)
+
+# HorizontalConstraint (use lines only)
+
+# MidpointConstraint (use 1 point and 1 line, makes point coincident and midpoint)
+
+# Symmetry constraint (1 line, 2 references)

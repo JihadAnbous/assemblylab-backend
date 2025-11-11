@@ -1,8 +1,8 @@
 import jax
 import jax.numpy as jnp
 
-
-from .models import AssemblyComponent, AssemblyPoint
+from references.models import ReferencePoint
+from .models import AssemblyComponent
 from django.db.models.signals import post_save
 
 from django_project.utils.helpers import transform
@@ -26,8 +26,14 @@ def create_assembly_points(sender, instance, created, **kwargs):
             )
             x = float(new_coordinates[0])
             y = float(new_coordinates[1])
-            AssemblyPoint.objects.create(
-                component=instance, location=location, label="placeholder", x=x, y=y
+            ReferencePoint.objects.create(
+                assembly=instance.assembly,
+                type="ReferencePoint",
+                label="placeholder",
+                component=instance,
+                location=location,
+                x=x,
+                y=y,
             )
 
 
