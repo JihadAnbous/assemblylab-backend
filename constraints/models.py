@@ -197,3 +197,5 @@ class VariableAngleConstraint(Constraint):
 # MidpointConstraint (use 1 point and 1 line, makes point coincident and midpoint)
 
 # Symmetry constraint (1 line, 2 references)
+
+# Collinear constraint (3 points)
