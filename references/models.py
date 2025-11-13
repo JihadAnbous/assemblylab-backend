@@ -1,5 +1,7 @@
-from django.db import models
 from django.core.exceptions import ValidationError
+
+from django.db import models
+from django.apps import apps
 
 from components.models import Location
 from assemblies.models import Assembly, AssemblyComponent
@@ -21,6 +23,15 @@ class Reference(models.Model):
     def clean(self):
         super().clean()
         # Additional validation
+
+    def get_specific_instance(self):
+        # Get the model class using the type field
+        specific_model = apps.get_model(app_label="references", model_name=self.type)
+        try:
+            instance = specific_model.objects.get(pk=self.pk)
+            return instance
+        except specific_model.DoesNotExist:
+            return None
 
 
 class ReferencePoint(Reference):

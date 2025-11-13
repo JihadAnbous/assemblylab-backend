@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 
 from django.db import models
+from django.apps import apps
 
 from assemblies.models import Assembly
 from references.models import Reference, ReferencePoint, ReferenceLine, ReferenceAngle
@@ -27,6 +28,15 @@ class Constraint(models.Model):
     def clean(self):
         super().clean()
         # Additional validation
+
+    def get_specific_instance(self):
+        # Get the model class using the type field
+        specific_model = apps.get_model(app_label="constraints", model_name=self.type)
+        try:
+            instance = specific_model.objects.get(pk=self.pk)
+            return instance
+        except specific_model.DoesNotExist:
+            return None
 
 
 class CoincidentConstraint(Constraint):
