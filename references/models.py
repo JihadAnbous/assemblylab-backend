@@ -1,3 +1,6 @@
+import jax
+import jax.numpy as jnp
+
 from django.core.exceptions import ValidationError
 
 from django.db import models
@@ -5,6 +8,8 @@ from django.apps import apps
 
 from components.models import Location
 from assemblies.models import Assembly, AssemblyComponent
+
+from django_project.utils.helpers import vector
 
 # Create your models here.
 
@@ -46,6 +51,10 @@ class ReferencePoint(Reference):
     x = models.FloatField(blank=True, null=True)
     y = models.FloatField(blank=True, null=True)
 
+    @property
+    def matrix(self):
+        return jnp.array([self.x, self.y, 1])
+
     def __str__(self):
         return f"{self.component}-{self.label}"
 
@@ -70,6 +79,13 @@ class ReferenceLine(Reference):
     point2 = models.ForeignKey(
         ReferencePoint, on_delete=models.CASCADE, related_name="point2_referenceline"
     )
+
+    @property
+    def matrix(self):
+        point1 = self.point1.matrix
+        point2 = self.point1.matrix
+        line_vector = vector(point1, point2)
+        return line_vector
 
     def __str__(self):
         return f"{self.assembly}-{self.label}"

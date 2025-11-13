@@ -51,6 +51,11 @@ class CoincidentConstraint(Constraint):
         related_name="reference2_coincidentconstraint",
     )
 
+    # Property field: the constraint's equation
+    @property
+    def equation(self):
+        return None
+
     def __str__(self):
         return f"{self.type}"
 
