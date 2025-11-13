@@ -1,3 +1,6 @@
+import jax
+import jax.numpy as jnp
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -13,6 +16,8 @@ from references.models import Reference, ReferencePoint, ReferenceLine, Referenc
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
+from django_project.utils.constraints import coincident_constraint
+
 # Create your models here.
 
 
@@ -21,6 +26,9 @@ class Constraint(models.Model):
         Assembly, on_delete=models.CASCADE, related_name="assembly_constraint"
     )
     type = models.CharField(max_length=50, editable=False)
+
+    # def is_explicit(self):
+    # return False (solver needed by default)
 
     def __str__(self):
         return f"{self.assembly}-{self.type}"
@@ -51,10 +59,34 @@ class CoincidentConstraint(Constraint):
         related_name="reference2_coincidentconstraint",
     )
 
-    # Property field: the constraint's equation
+    # def is_explicit(self):
+    # if 1 point is fixed, return True
+    # If no fixed points, needs solver, return False
+    # return False (solver needed by default)
+
+    # Use residual instead of equation??
     @property
     def equation(self):
-        return None
+        result = None
+        ref1 = self.reference1.get_specific_instance()
+        ref2 = self.reference2.get_specific_instance()
+
+        # If ref1.fixed == True:
+        # ref1_matrix = ref1.matrix
+        # Else:
+        # ref1_matrix = jnp.array([x1, y1, 1])
+
+        # If 2 points were selected
+        # if ref1.type == "ReferencePoint" and ref2.type == "ReferencePoint":
+        # result = coincident_constraint(ref1_matrix, ref2_matrix)
+        # If 1 point and 1 line was selected
+        # If 2 lines were selected
+        return result
+
+    @property
+    def derivative(self):
+        result = jax.grad(self.equation)
+        return result
 
     def __str__(self):
         return f"{self.type}"

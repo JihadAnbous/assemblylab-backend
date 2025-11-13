@@ -4,18 +4,18 @@ import jax.numpy as jnp
 from .helpers import vector, vector_magnitude, cross_product, dot_product
 
 
-def constraint_coincident(point1, point2):
-    # point1 must be a jax 1D array: [x, y]
-    # point2 must be a jax 1D array: [x, y]
+def coincident_constraint(point1, point2):
+    # point1 must be a jax 1D array: [x, y, 1]
+    # point2 must be a jax 1D array: [x, y, 1]
     # Constraint satisfied when function = 0
     v = vector(point1, point2)
     function = vector_magnitude(v)
     return function
 
 
-def constraint_distance(point1, point2, distance):
-    # point1 must be a jax 1D array: [x, y]
-    # point2 must be a jax 1D array: [x, y]
+def distance_constraint(point1, point2, distance):
+    # point1 must be a jax 1D array: [x, y, 1]
+    # point2 must be a jax 1D array: [x, y, 1]
     # given_distance must be a float
     # Constraint satisfied when function = 0
     v = vector(point1, point2)
@@ -24,9 +24,9 @@ def constraint_distance(point1, point2, distance):
     return function
 
 
-def constraint_angle(vector1, vector2, angle):
-    # vector1 must be a jax 1D array: [x, y]
-    # vector2 must be a jax 1D array: [x, y]
+def angle_constraint(vector1, vector2, angle):
+    # vector1 must be a jax 1D array: [x, y, 1]
+    # vector2 must be a jax 1D array: [x, y, 1]
     # angle must be a float [radians]
     # Constraint satisfied when function = 0
     u = dot_product(vector1, vector2)
@@ -35,25 +35,25 @@ def constraint_angle(vector1, vector2, angle):
     return function
 
 
-def constraint_parallel(vector1, vector2):
-    # vector1 must be a jax 1D array: [x, y]
-    # vector2 must be a jax 1D array: [x, y]
+def parallel_constraint(vector1, vector2):
+    # vector1 must be a jax 1D array: [x, y, 1]
+    # vector2 must be a jax 1D array: [x, y, 1]
     # Constraint satisfied when function = 0
     function = cross_product(vector1, vector2)
     return function
 
 
-def constraint_perpendicular(vector1, vector2):
-    # vector1 must be a jax 1D array: [x, y]
-    # vector2 must be a jax 1D array: [x, y]
+def perpendicular_constraint(vector1, vector2):
+    # vector1 must be a jax 1D array: [x, y, 1]
+    # vector2 must be a jax 1D array: [x, y, 1]
     # Constraint satisfied when function = 0
     function = dot_product(vector1, vector2)
     return function
 
 
-def constraint_variable_distance(point1, point2, minimum, maximum):
-    # vector1 must be a jax 1D array: [x, y]
-    # vector2 must be a jax 1D array: [x, y]
+def variable_distance_constraint(point1, point2, minimum, maximum):
+    # vector1 must be a jax 1D array: [x, y, 1]
+    # vector2 must be a jax 1D array: [x, y, 1]
     # minimum, maximum must be floats [mm]
     # Constraint satisfied when function = 0
 
@@ -74,9 +74,9 @@ def constraint_variable_distance(point1, point2, minimum, maximum):
     return function
 
 
-def constraint_variable_angle(vector1, vector2, minimum, maximum):
-    # vector1 must be a jax 1D array: [x, y]
-    # vector2 must be a jax 1D array: [x, y]
+def variable_angle_constraint(vector1, vector2, minimum, maximum):
+    # vector1 must be a jax 1D array: [x, y, 1]
+    # vector2 must be a jax 1D array: [x, y, 1]
     # minimum, maximum must be floats [radians]
     # Constraint satisfied when function = 0
 
