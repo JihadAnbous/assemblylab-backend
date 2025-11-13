@@ -85,6 +85,8 @@ class CoincidentConstraint(Constraint):
 
     @property
     def derivative(self):
+        # if is_explicit, return None. For jacobian, if implicit, include, otherwise don't.
+        # If is_explicit == false, then derive the residual
         result = jax.grad(self.equation)
         return result
 
