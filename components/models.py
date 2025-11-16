@@ -4,6 +4,7 @@ import jax.numpy as jnp
 from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 
 # Create your models here.
 
@@ -47,6 +48,7 @@ class Component(models.Model):
     )
     number = models.CharField(max_length=100, unique=True)
     description = models.CharField(max_length=100, unique=True)
+    mass = models.FloatField(validators=[MinValueValidator(0.0)], blank=True, null=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 

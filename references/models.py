@@ -6,8 +6,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.apps import apps  # For signals.py
 
-from components.models import Location
-from assemblies.models import Assembly, AssemblyComponent
+from components.models import Component, Location
+from assemblies.models import Assembly
 
 from django_project.utils.helpers import vector
 
@@ -60,10 +60,11 @@ class ReferencePoint(Reference):
         return jnp.array([self.x_plot, self.y_plot, 1])
 
     def transform(self, Sx, Sy, angle):
+        theta = jnp.deg2rad(angle)
         t = jnp.array(
             [
-                [jnp.cos(angle), -jnp.sin(angle), Sx],
-                [jnp.sin(angle), jnp.cos(angle), Sy],
+                [jnp.cos(theta), -jnp.sin(theta), Sx],
+                [jnp.sin(theta), jnp.cos(theta), Sy],
                 [0, 0, 1],
             ]
         )
@@ -85,14 +86,67 @@ class ReferencePoint(Reference):
         super(ReferencePoint, self).save(*args, **kwargs)
 
 
+class ReferenceComponent(models.Model):
+    assembly = models.ForeignKey(
+        Assembly, on_delete=models.CASCADE, related_name="assembly_referencecomponent"
+    )
+    component = models.ForeignKey(
+        Component, on_delete=models.CASCADE, related_name="component_referencecomponent"
+    )
+    fixed = models.BooleanField(default=False)
+
+    def transform(self, Sx, Sy, angle):
+        # Retrieve all ReferenceComponentPoint instances for this ReferenceComponent
+        points = ReferenceComponentPoint.objects.filter(
+            assembly=self.assembly,
+            component=self.component,
+        )
+        # Initialise the matrix
+        coordinates = []
+        for point in points:
+            coordinates.append([point.x_plot, point.y_plot, 1])
+        # Convert to jax array
+        component_matrix = jnp.array(coordinates)
+        theta = jnp.deg2rad(angle)
+        # Transformation matrix
+        t = jnp.array(
+            [
+                [jnp.cos(theta), -jnp.sin(theta), Sx],
+                [jnp.sin(theta), jnp.cos(theta), Sy],
+                [0, 0, 1],
+            ]
+        )
+        # Transform the component matrix - if error, try matrix, t.T to transpose
+        new_matrix = jnp.round(jnp.dot(t, component_matrix), decimals=6)
+        # Update the ReferenceComponentPoint fields
+        for i, point in enumerate(points):
+            point.x_plot = new_matrix[i, 0]
+            point.y_plot = new_matrix[i, 1]
+        ReferenceComponentPoint.objects.bulk_update(points, ["x_plot", "y_plot"])
+
+    def __str__(self):
+        return f"{self.assembly}-{self.component}"
+
+    def clean(self):
+        super().clean()
+        # Additional validation
+
+    def save(self, *args, **kwargs):
+        # If 2 points are fixed then self.fixed = True
+        # Save the instance
+        super(ReferenceComponent, self).save(*args, **kwargs)
+
+
 class ReferenceComponentPoint(ReferencePoint):
     component = models.ForeignKey(
-        AssemblyComponent,
+        ReferenceComponent,
         on_delete=models.CASCADE,
-        related_name="component_referencepoint",
+        related_name="component_referencecomponentpoint",
     )
     location = models.ForeignKey(
-        Location, on_delete=models.CASCADE, related_name="location_referencepoint"
+        Location,
+        on_delete=models.CASCADE,
+        related_name="location_referencecomponentpoint",
     )
 
     @property

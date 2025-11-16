@@ -3,6 +3,7 @@ from django.contrib import admin
 from .models import (
     Reference,
     ReferencePoint,
+    ReferenceComponent,
     ReferenceComponentPoint,
     ReferenceLine,
     ReferenceAngle,
@@ -35,6 +36,22 @@ class ReferencePointAdmin(admin.ModelAdmin):
         "y_plot",
     )
     readonly_fields = ("type", "status", "matrix")
+
+
+class ReferenceComponentPointInline(admin.TabularInline):
+    model = ReferenceComponentPoint
+    extra = 0
+
+
+@admin.register(ReferenceComponent)
+class ReferenceComponentAdmin(admin.ModelAdmin):
+    inlines = [ReferenceComponentPointInline]
+    list_display = (
+        "id",
+        "assembly",
+        "component",
+        "fixed",
+    )
 
 
 @admin.register(ReferenceComponentPoint)
@@ -84,8 +101,8 @@ class ReferencePointInline(admin.TabularInline):
     extra = 0
 
 
-class ReferenceComponentPointInline(admin.TabularInline):
-    model = ReferenceComponentPoint
+class ReferenceComponentInline(admin.TabularInline):
+    model = ReferenceComponent
     extra = 0
 
 

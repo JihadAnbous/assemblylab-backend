@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Assembly, AssemblyComponent
+from .models import Assembly
 from constraints.admin import (
     CoincidentConstraintInline,
     DistanceConstraintInline,
@@ -12,7 +12,7 @@ from constraints.admin import (
 )
 from references.admin import (
     ReferencePointInline,
-    ReferenceComponentPointInline,
+    ReferenceComponentInline,
     ReferenceLineInline,
     ReferenceAngleInline,
 )
@@ -21,15 +21,10 @@ from references.admin import (
 # Register your models here.
 
 
-class AssemblyComponentInline(admin.TabularInline):
-    model = AssemblyComponent
-    extra = 0
-
-
 @admin.register(Assembly)
 class AssemblyAdmin(admin.ModelAdmin):
     inlines = [
-        AssemblyComponentInline,
+        ReferenceComponentInline,
         ReferencePointInline,
         ReferenceLineInline,
         ReferenceAngleInline,
@@ -50,15 +45,4 @@ class AssemblyAdmin(admin.ModelAdmin):
     readonly_fields = (
         "status",
         "solved",
-    )
-
-
-@admin.register(AssemblyComponent)
-class AssemblyComponentAdmin(admin.ModelAdmin):
-    inlines = [ReferenceComponentPointInline]
-    list_display = (
-        "id",
-        "assembly",
-        "component",
-        "fixed",
     )
