@@ -6,6 +6,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 
 from components.models import Component, Location, UNITS_CHOICES
+from references.models import ReferenceComponentPoint
 
 # Create your models here.
 
@@ -40,19 +41,34 @@ class AssemblyComponent(models.Model):
         Component, on_delete=models.CASCADE, related_name="component_assemblycomponent"
     )
     fixed = models.BooleanField(default=False)
-    transformation_point = models.ForeignKey(
-        Location,
-        on_delete=models.CASCADE,
-        related_name="transformationpoint_assemblycomponent",
-    )
-    x_translation = models.FloatField(blank=True, null=True)
-    y_translation = models.FloatField(blank=True, null=True)
-    rotation = models.FloatField(blank=True, null=True)
 
-    @property
-    def matrix(self):
-        matrix = jnp.array([0])
-        return matrix
+    def transform(self, Sx, Sy, angle, rotate_about):
+        # Retrieve all ReferenceComponentPoint instances for this AssemblyComponent
+        points = ReferenceComponentPoint.objects.filter(
+            assembly=self.assembly,
+            component=self.component,
+        )
+        # Initialise the matrix
+        coordinates = []
+        for point in points:
+            coordinates.append([point.x_plot, point.y_plot, 1])
+        # Convert to jax array
+        component_matrix = jnp.array(coordinates)
+        # Transformation matrix
+        t = jnp.array(
+            [
+                [jnp.cos(angle), -jnp.sin(angle), Sx],
+                [jnp.sin(angle), jnp.cos(angle), Sy],
+                [0, 0, 1],
+            ]
+        )
+        # Transform the component matrix - if error, try matrix, t.T to transpose
+        new_matrix = jnp.round(jnp.dot(t, component_matrix), decimals=6)
+        # Update the ReferenceComponentPoint fields
+        for i, point in enumerate(points):
+            point.x_plot = new_matrix[i, 0]
+            point.y_plot = new_matrix[i, 1]
+        ReferenceComponentPoint.objects.bulk_update(points, ["x_plot", "y_plot"])
 
     def __str__(self):
         return f"{self.assembly}-{self.component}"
@@ -60,18 +76,8 @@ class AssemblyComponent(models.Model):
     def clean(self):
         super().clean()
         # Additional validation
-        if self.transformation_point.component != self.component:
-            raise ValidationError(
-                "This transformation point does not belong to this component."
-            )
 
     def save(self, *args, **kwargs):
-        if self.x_translation is None:
-            self.x_translation = 0
-        if self.y_translation is None:
-            self.y_translation = 0
-        if self.rotation is None:
-            self.rotation = 0
         # If 2 points are fixed then self.fixed = True
         # Save the instance
         super(AssemblyComponent, self).save(*args, **kwargs)

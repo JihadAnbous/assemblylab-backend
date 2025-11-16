@@ -4,7 +4,7 @@ import jax.numpy as jnp
 from django.core.exceptions import ValidationError
 
 from django.db import models
-from django.apps import apps
+from django.apps import apps  # For signals.py
 
 from components.models import Location
 from assemblies.models import Assembly, AssemblyComponent
@@ -13,6 +13,13 @@ from django_project.utils.helpers import vector
 
 # Create your models here.
 
+REFERENCE_STATUS_CHOICES = [
+    ("Fixed", "Fixed"),
+    ("Random", "Random"),
+    ("Partially constrained", "Partially constrained"),
+    ("Fully defined", "Fully defined"),
+]
+
 
 class Reference(models.Model):
     assembly = models.ForeignKey(
@@ -20,7 +27,12 @@ class Reference(models.Model):
     )
     type = models.CharField(max_length=50, editable=False)
     label = models.CharField(max_length=100, blank=True, null=True)
-    fixed = models.BooleanField(default=False, editable=False)
+    status = models.CharField(
+        max_length=21,
+        editable=False,
+        choices=REFERENCE_STATUS_CHOICES,
+        default="Random",
+    )
 
     def __str__(self):
         return f"{self.assembly}-{self.type}"
@@ -40,6 +52,40 @@ class Reference(models.Model):
 
 
 class ReferencePoint(Reference):
+    x_plot = models.FloatField()
+    y_plot = models.FloatField()
+
+    @property
+    def matrix(self):
+        return jnp.array([self.x_plot, self.y_plot, 1])
+
+    def transform(self, Sx, Sy, angle):
+        t = jnp.array(
+            [
+                [jnp.cos(angle), -jnp.sin(angle), Sx],
+                [jnp.sin(angle), jnp.cos(angle), Sy],
+                [0, 0, 1],
+            ]
+        )
+        result = jnp.round(jnp.dot(t, self.matrix), decimals=6)
+        self.x_plot = result[0]
+        self.y_plot = result[1]
+        self.save()
+
+    def __str__(self):
+        return f"{self.label}"
+
+    def clean(self):
+        super().clean()
+        # Additional validation
+
+    def save(self, *args, **kwargs):
+        self.type = "ReferencePoint"
+        # Save the instance
+        super(ReferencePoint, self).save(*args, **kwargs)
+
+
+class ReferenceComponentPoint(ReferencePoint):
     component = models.ForeignKey(
         AssemblyComponent,
         on_delete=models.CASCADE,
@@ -48,8 +94,20 @@ class ReferencePoint(Reference):
     location = models.ForeignKey(
         Location, on_delete=models.CASCADE, related_name="location_referencepoint"
     )
-    x = models.FloatField(blank=True, null=True)
-    y = models.FloatField(blank=True, null=True)
+
+    @property
+    def x(self):
+        if self.status == "Fixed":
+            return self.x_plot
+        else:
+            return None
+
+    @property
+    def y(self):
+        if self.status == "Fixed":
+            return self.y_plot
+        else:
+            return None
 
     @property
     def matrix(self):
@@ -66,8 +124,8 @@ class ReferencePoint(Reference):
 
     def save(self, *args, **kwargs):
         if self.component.fixed is True:
-            self.fixed = True
-        self.type = "ReferencePoint"
+            self.status = "Fixed"
+        self.type = "ReferenceComponentPoint"
         # Save the instance
         super(ReferencePoint, self).save(*args, **kwargs)
 
@@ -93,19 +151,16 @@ class ReferenceLine(Reference):
     def clean(self):
         super().clean()
         # Additional validation
-        if self.point1.component.assembly != self.assembly:
+        if self.point1.assembly != self.assembly:
             raise ValidationError("Point 1 does not belong to this assembly.")
-        if self.point2.component.assembly != self.assembly:
+        if self.point2.assembly != self.assembly:
             raise ValidationError("Point 2 does not belong to this assembly.")
         if self.point1 == self.point2:
             raise ValidationError("You cannot make a line out of the same point.")
 
     def save(self, *args, **kwargs):
-        if self.point1.fixed and self.point2.fixed is True:
-            self.fixed = True
-        if self.fixed is True:
-            # Create a variable that stores line colour? Bold = Fixed/constrained ??
-            pass
+        if self.point1.status and self.point2.status == "Fixed":
+            self.status = "Fixed"
         self.type = "ReferenceLine"
         # Save the instance
         super(ReferenceLine, self).save(*args, **kwargs)

@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import Reference, ReferencePoint, ReferenceLine, ReferenceAngle
+from .models import (
+    Reference,
+    ReferencePoint,
+    ReferenceComponentPoint,
+    ReferenceLine,
+    ReferenceAngle,
+)
 
 # Register your models here.
 
@@ -12,9 +18,9 @@ class ReferenceAdmin(admin.ModelAdmin):
         "assembly",
         "type",
         "label",
-        "fixed",
+        "status",
     )
-    readonly_fields = ("assembly", "type", "label", "fixed")
+    readonly_fields = ("assembly", "type", "label", "status")
 
 
 @admin.register(ReferencePoint)
@@ -24,13 +30,27 @@ class ReferencePointAdmin(admin.ModelAdmin):
         "assembly",
         "type",
         "label",
-        "fixed",
+        "status",
+        "x_plot",
+        "y_plot",
+    )
+    readonly_fields = ("type", "status", "matrix")
+
+
+@admin.register(ReferenceComponentPoint)
+class ReferenceComponentPointAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "assembly",
+        "type",
+        "label",
+        "status",
         "component",
         "location",
-        "x",
-        "y",
+        "x_plot",
+        "y_plot",
     )
-    readonly_fields = ("type", "fixed", "matrix")
+    readonly_fields = ("type", "status", "matrix")
 
 
 @admin.register(ReferenceLine)
@@ -41,9 +61,9 @@ class ReferenceLineAdmin(admin.ModelAdmin):
         "point1",
         "point2",
         "label",
-        "fixed",
+        "status",
     )
-    readonly_fields = ("type", "fixed", "matrix")
+    readonly_fields = ("type", "status", "matrix")
 
 
 @admin.register(ReferenceAngle)
@@ -54,13 +74,18 @@ class ReferenceAngleAdmin(admin.ModelAdmin):
         "line1",
         "line2",
         "label",
-        "fixed",
+        "status",
     )
-    readonly_fields = ("type", "fixed")
+    readonly_fields = ("type", "status")
 
 
 class ReferencePointInline(admin.TabularInline):
     model = ReferencePoint
+    extra = 0
+
+
+class ReferenceComponentPointInline(admin.TabularInline):
+    model = ReferenceComponentPoint
     extra = 0
 
 

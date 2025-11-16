@@ -26,9 +26,7 @@ class Constraint(models.Model):
         Assembly, on_delete=models.CASCADE, related_name="assembly_constraint"
     )
     type = models.CharField(max_length=50, editable=False)
-
-    # def is_explicit(self):
-    # return False (solver needed by default)
+    is_explicit = models.BooleanField(default=False, editable=False)
 
     def __str__(self):
         return f"{self.assembly}-{self.type}"
@@ -59,36 +57,38 @@ class CoincidentConstraint(Constraint):
         related_name="reference2_coincidentconstraint",
     )
 
-    # def is_explicit(self):
-    # if 1 point is fixed, return True
-    # If no fixed points, needs solver, return False
-    # return False (solver needed by default)
-
-    # Use residual instead of equation??
     @property
-    def equation(self):
-        result = None
-        ref1 = self.reference1.get_specific_instance()
-        ref2 = self.reference2.get_specific_instance()
+    def residual(self):
+        if self.is_explicit:
+            # send signal to update the other reference
+            # OR
+            # ref2 = self.reference2.get_specific_instance()
+            # ref2.x = ref1.x       ref2.y = ref1.y
+            pass
+        else:
+            # Construct the residual equation
+            result = None
+            ref1 = self.reference1.get_specific_instance()
+            ref2 = self.reference2.get_specific_instance()
 
-        # If ref1.fixed == True:
-        # ref1_matrix = ref1.matrix
-        # Else:
-        # ref1_matrix = jnp.array([x1, y1, 1])
+            # If ref1.fixed == True:
+            # ref1_matrix = ref1.matrix
+            # Else:
+            # ref1_matrix = jnp.array([x1, y1, 1])
 
-        # If 2 points were selected
-        # if ref1.type == "ReferencePoint" and ref2.type == "ReferencePoint":
-        # result = coincident_constraint(ref1_matrix, ref2_matrix)
-        # If 1 point and 1 line was selected
-        # If 2 lines were selected
+            # If 2 points were selected
+            # if ref1.type == "ReferencePoint" and ref2.type == "ReferencePoint":
+            # result = coincident_constraint(ref1_matrix, ref2_matrix)
+            # If 1 point and 1 line was selected
+            # If 2 lines were selected
         return result
 
-    @property
-    def derivative(self):
-        # if is_explicit, return None. For jacobian, if implicit, include, otherwise don't.
-        # If is_explicit == false, then derive the residual
-        result = jax.grad(self.equation)
-        return result
+    # @property
+    # def derivative(self):
+    #     # if is_explicit, return None. For jacobian, if implicit, include, otherwise don't.
+    #     # If is_explicit == false, then derive the residual
+    #     result = jax.grad(self.equation)
+    #     return result
 
     def __str__(self):
         return f"{self.type}"
@@ -102,6 +102,9 @@ class CoincidentConstraint(Constraint):
             )
 
     def save(self, *args, **kwargs):
+        # Set constraint to explicit if a reference is fixed
+        if self.reference1.fixed or self.reference2.fixed:
+            self.is_explicit = True
         self.type = "CoincidentConstraint"
         # Save the instance
         super(CoincidentConstraint, self).save(*args, **kwargs)

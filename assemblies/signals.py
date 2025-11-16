@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from references.models import ReferencePoint
+from references.models import ReferenceComponentPoint
 from .models import AssemblyComponent
 from django.db.models.signals import post_save
 
@@ -26,14 +26,15 @@ def create_assembly_points(sender, instance, created, **kwargs):
             )
             x = float(new_coordinates[0])
             y = float(new_coordinates[1])
-            ReferencePoint.objects.create(
+            ReferenceComponentPoint.objects.create(
                 assembly=instance.assembly,
-                type="ReferencePoint",
+                type="ReferenceComponentPoint",
                 label="placeholder",
+                status="Fixed",
                 component=instance,
                 location=location,
-                x=x,
-                y=y,
+                x_plot=x,
+                y_plot=y,
             )
 
 

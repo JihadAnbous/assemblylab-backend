@@ -16,17 +16,18 @@ from .models import (
 
 @admin.register(Constraint)
 class ConstraintAdmin(admin.ModelAdmin):
-    list_display = ("id", "assembly", "type")
+    list_display = ("id", "assembly", "type", "is_explicit")
     readonly_fields = (
         "assembly",
         "type",
+        "is_explicit",
     )
 
 
 @admin.register(CoincidentConstraint)
 class CoincidentConstraintAdmin(admin.ModelAdmin):
     list_display = ("id", "assembly", "type", "reference1", "reference2")
-    readonly_fields = ("type", "equation")
+    readonly_fields = ("type",)
 
 
 @admin.register(DistanceConstraint)

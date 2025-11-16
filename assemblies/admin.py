@@ -12,6 +12,7 @@ from constraints.admin import (
 )
 from references.admin import (
     ReferencePointInline,
+    ReferenceComponentPointInline,
     ReferenceLineInline,
     ReferenceAngleInline,
 )
@@ -54,15 +55,10 @@ class AssemblyAdmin(admin.ModelAdmin):
 
 @admin.register(AssemblyComponent)
 class AssemblyComponentAdmin(admin.ModelAdmin):
-    inlines = [ReferencePointInline]
+    inlines = [ReferenceComponentPointInline]
     list_display = (
         "id",
         "assembly",
         "component",
         "fixed",
-        "transformation_point",
-        "x_translation",
-        "y_translation",
-        "rotation",
     )
-    readonly_fields = ("matrix",)
