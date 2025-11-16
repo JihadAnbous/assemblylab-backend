@@ -40,6 +40,7 @@ class ReferencePointAdmin(admin.ModelAdmin):
 
 class ReferenceComponentPointInline(admin.TabularInline):
     model = ReferenceComponentPoint
+    fk_name = "reference_component"
     extra = 0
 
 
@@ -49,9 +50,12 @@ class ReferenceComponentAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "assembly",
+        "type",
+        "label",
+        "status",
         "component",
-        "fixed",
     )
+    readonly_fields = ("type", "status")
 
 
 @admin.register(ReferenceComponentPoint)
@@ -62,7 +66,7 @@ class ReferenceComponentPointAdmin(admin.ModelAdmin):
         "type",
         "label",
         "status",
-        "component",
+        "reference_component",
         "location",
         "x_plot",
         "y_plot",

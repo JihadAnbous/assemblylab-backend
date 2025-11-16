@@ -86,20 +86,15 @@ class ReferencePoint(Reference):
         super(ReferencePoint, self).save(*args, **kwargs)
 
 
-class ReferenceComponent(models.Model):
-    assembly = models.ForeignKey(
-        Assembly, on_delete=models.CASCADE, related_name="assembly_referencecomponent"
-    )
+class ReferenceComponent(Reference):
     component = models.ForeignKey(
         Component, on_delete=models.CASCADE, related_name="component_referencecomponent"
     )
-    fixed = models.BooleanField(default=False)
 
     def transform(self, Sx, Sy, angle):
         # Retrieve all ReferenceComponentPoint instances for this ReferenceComponent
         points = ReferenceComponentPoint.objects.filter(
-            assembly=self.assembly,
-            component=self.component,
+            reference_component=self,
         )
         # Initialise the matrix
         coordinates = []
@@ -132,16 +127,16 @@ class ReferenceComponent(models.Model):
         # Additional validation
 
     def save(self, *args, **kwargs):
-        # If 2 points are fixed then self.fixed = True
+        self.type = "ReferenceComponent"
         # Save the instance
         super(ReferenceComponent, self).save(*args, **kwargs)
 
 
 class ReferenceComponentPoint(ReferencePoint):
-    component = models.ForeignKey(
+    reference_component = models.ForeignKey(
         ReferenceComponent,
         on_delete=models.CASCADE,
-        related_name="component_referencecomponentpoint",
+        related_name="referencecomponent_referencecomponentpoint",
     )
     location = models.ForeignKey(
         Location,
@@ -168,7 +163,7 @@ class ReferenceComponentPoint(ReferencePoint):
         return jnp.array([self.x, self.y, 1])
 
     def __str__(self):
-        return f"{self.component}-{self.label}"
+        return f"{self.reference_component}-{self.label}"
 
     def clean(self):
         super().clean()
@@ -177,11 +172,9 @@ class ReferenceComponentPoint(ReferencePoint):
             raise ValidationError("This point does not belong to this component.")
 
     def save(self, *args, **kwargs):
-        if self.component.fixed is True:
-            self.status = "Fixed"
         self.type = "ReferenceComponentPoint"
         # Save the instance
-        super(ReferencePoint, self).save(*args, **kwargs)
+        super(ReferenceComponentPoint, self).save(*args, **kwargs)
 
 
 class ReferenceLine(Reference):

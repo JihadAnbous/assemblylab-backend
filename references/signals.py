@@ -15,7 +15,7 @@ def create_reference_component_points(sender, instance, created, **kwargs):
                 type="ReferenceComponentPoint",
                 label="Placeholder",
                 status="Random",
-                component=instance,
+                reference_component=instance,
                 location=location,
                 x_plot=location.x,
                 y_plot=location.y,
