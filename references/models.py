@@ -33,6 +33,7 @@ class Reference(models.Model):
         choices=REFERENCE_STATUS_CHOICES,
         default="Random",
     )
+    hidden = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.assembly}-{self.type}"
@@ -51,10 +52,85 @@ class Reference(models.Model):
             return None
 
 
-class ReferencePoint(Reference):
-    x_plot = models.FloatField()
-    y_plot = models.FloatField()
+class ReferenceComponent(Reference):
+    component = models.ForeignKey(
+        Component, on_delete=models.CASCADE, related_name="component_referencecomponent"
+    )
 
+    def transform(self, Sx, Sy, angle):
+        # Retrieve all ReferencePoint instances for this ReferenceComponent
+        points = ReferencePoint.objects.filter(
+            reference_component=self,
+        )
+        # Initialise the matrix
+        coordinates = []
+        for point in points:
+            coordinates.append([point.x_plot, point.y_plot, 1])
+        # Convert to jax array
+        component_matrix = jnp.array(coordinates)
+        theta = jnp.deg2rad(angle)
+        # Transformation matrix
+        t = jnp.array(
+            [
+                [jnp.cos(theta), -jnp.sin(theta), Sx],
+                [jnp.sin(theta), jnp.cos(theta), Sy],
+                [0, 0, 1],
+            ]
+        )
+        # Transform the component matrix - if error, try matrix, t.T to transpose
+        new_matrix = jnp.round(jnp.dot(t, component_matrix), decimals=6)
+        # Update the ReferenceComponentPoint fields
+        for i, point in enumerate(points):
+            point.x_plot = new_matrix[i, 0]
+            point.y_plot = new_matrix[i, 1]
+        ReferencePoint.objects.bulk_update(points, ["x_plot", "y_plot"])
+
+    def __str__(self):
+        return f"{self.assembly}-{self.component}"
+
+    def clean(self):
+        super().clean()
+        # Additional validation
+
+    def save(self, *args, **kwargs):
+        self.type = "ReferenceComponent"
+        # Save the instance
+        super(ReferenceComponent, self).save(*args, **kwargs)
+
+
+class ReferencePoint(Reference):
+    component = models.ForeignKey(
+        ReferenceComponent,
+        on_delete=models.CASCADE,
+        related_name="component_referencepoint",
+        blank=True,
+        null=True,
+    )
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.CASCADE,
+        related_name="location_referencepoint",
+        blank=True,
+        null=True,
+    )
+    x_plot = models.FloatField()  # This is never null and are always current
+    y_plot = models.FloatField()  # This is never null and are always current
+
+    @property
+    def x(self):
+        if self.status == "Fixed":
+            return self.x_plot
+        else:
+            return None
+
+    @property
+    def y(self):
+        if self.status == "Fixed":
+            return self.y_plot
+        else:
+            return None
+
+    # Used for transform function only
     @property
     def matrix(self):
         return jnp.array([self.x_plot, self.y_plot, 1])
@@ -79,102 +155,14 @@ class ReferencePoint(Reference):
     def clean(self):
         super().clean()
         # Additional validation
+        if self.component and self.location:
+            if self.location.component != self.component.component:
+                raise ValidationError("This point does not belong to this component.")
 
     def save(self, *args, **kwargs):
         self.type = "ReferencePoint"
         # Save the instance
         super(ReferencePoint, self).save(*args, **kwargs)
-
-
-class ReferenceComponent(Reference):
-    component = models.ForeignKey(
-        Component, on_delete=models.CASCADE, related_name="component_referencecomponent"
-    )
-
-    def transform(self, Sx, Sy, angle):
-        # Retrieve all ReferenceComponentPoint instances for this ReferenceComponent
-        points = ReferenceComponentPoint.objects.filter(
-            reference_component=self,
-        )
-        # Initialise the matrix
-        coordinates = []
-        for point in points:
-            coordinates.append([point.x_plot, point.y_plot, 1])
-        # Convert to jax array
-        component_matrix = jnp.array(coordinates)
-        theta = jnp.deg2rad(angle)
-        # Transformation matrix
-        t = jnp.array(
-            [
-                [jnp.cos(theta), -jnp.sin(theta), Sx],
-                [jnp.sin(theta), jnp.cos(theta), Sy],
-                [0, 0, 1],
-            ]
-        )
-        # Transform the component matrix - if error, try matrix, t.T to transpose
-        new_matrix = jnp.round(jnp.dot(t, component_matrix), decimals=6)
-        # Update the ReferenceComponentPoint fields
-        for i, point in enumerate(points):
-            point.x_plot = new_matrix[i, 0]
-            point.y_plot = new_matrix[i, 1]
-        ReferenceComponentPoint.objects.bulk_update(points, ["x_plot", "y_plot"])
-
-    def __str__(self):
-        return f"{self.assembly}-{self.component}"
-
-    def clean(self):
-        super().clean()
-        # Additional validation
-
-    def save(self, *args, **kwargs):
-        self.type = "ReferenceComponent"
-        # Save the instance
-        super(ReferenceComponent, self).save(*args, **kwargs)
-
-
-class ReferenceComponentPoint(ReferencePoint):
-    reference_component = models.ForeignKey(
-        ReferenceComponent,
-        on_delete=models.CASCADE,
-        related_name="referencecomponent_referencecomponentpoint",
-    )
-    location = models.ForeignKey(
-        Location,
-        on_delete=models.CASCADE,
-        related_name="location_referencecomponentpoint",
-    )
-
-    @property
-    def x(self):
-        if self.status == "Fixed":
-            return self.x_plot
-        else:
-            return None
-
-    @property
-    def y(self):
-        if self.status == "Fixed":
-            return self.y_plot
-        else:
-            return None
-
-    @property
-    def matrix(self):
-        return jnp.array([self.x, self.y, 1])
-
-    def __str__(self):
-        return f"{self.reference_component}-{self.label}"
-
-    def clean(self):
-        super().clean()
-        # Additional validation
-        if self.location.component != self.component.component:
-            raise ValidationError("This point does not belong to this component.")
-
-    def save(self, *args, **kwargs):
-        self.type = "ReferenceComponentPoint"
-        # Save the instance
-        super(ReferenceComponentPoint, self).save(*args, **kwargs)
 
 
 class ReferenceLine(Reference):

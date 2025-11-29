@@ -4,7 +4,6 @@ from .models import (
     Reference,
     ReferencePoint,
     ReferenceComponent,
-    ReferenceComponentPoint,
     ReferenceLine,
     ReferenceAngle,
 )
@@ -20,8 +19,30 @@ class ReferenceAdmin(admin.ModelAdmin):
         "type",
         "label",
         "status",
+        "hidden",
     )
     readonly_fields = ("assembly", "type", "label", "status")
+
+
+class ReferencePointInline(admin.TabularInline):
+    model = ReferencePoint
+    fk_name = "component"
+    extra = 0
+
+
+@admin.register(ReferenceComponent)
+class ReferenceComponentAdmin(admin.ModelAdmin):
+    inlines = [ReferencePointInline]
+    list_display = (
+        "id",
+        "assembly",
+        "type",
+        "label",
+        "status",
+        "component",
+        "hidden",
+    )
+    readonly_fields = ("type", "status")
 
 
 @admin.register(ReferencePoint)
@@ -32,44 +53,11 @@ class ReferencePointAdmin(admin.ModelAdmin):
         "type",
         "label",
         "status",
-        "x_plot",
-        "y_plot",
-    )
-    readonly_fields = ("type", "status", "matrix")
-
-
-class ReferenceComponentPointInline(admin.TabularInline):
-    model = ReferenceComponentPoint
-    fk_name = "reference_component"
-    extra = 0
-
-
-@admin.register(ReferenceComponent)
-class ReferenceComponentAdmin(admin.ModelAdmin):
-    inlines = [ReferenceComponentPointInline]
-    list_display = (
-        "id",
-        "assembly",
-        "type",
-        "label",
-        "status",
         "component",
-    )
-    readonly_fields = ("type", "status")
-
-
-@admin.register(ReferenceComponentPoint)
-class ReferenceComponentPointAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "assembly",
-        "type",
-        "label",
-        "status",
-        "reference_component",
         "location",
         "x_plot",
         "y_plot",
+        "hidden",
     )
     readonly_fields = ("type", "status", "matrix")
 
@@ -83,6 +71,7 @@ class ReferenceLineAdmin(admin.ModelAdmin):
         "point2",
         "label",
         "status",
+        "hidden",
     )
     readonly_fields = ("type", "status", "matrix")
 
@@ -96,6 +85,7 @@ class ReferenceAngleAdmin(admin.ModelAdmin):
         "line2",
         "label",
         "status",
+        "hidden",
     )
     readonly_fields = ("type", "status")
 
