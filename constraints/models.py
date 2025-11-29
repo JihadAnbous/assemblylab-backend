@@ -1,8 +1,6 @@
 import jax
 import jax.numpy as jnp
 
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 
@@ -12,11 +10,7 @@ from django.apps import apps
 from assemblies.models import Assembly
 from references.models import Reference, ReferencePoint, ReferenceLine, ReferenceAngle
 
-
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
-
-from django_project.utils.constraints import coincident_constraint
+from .utils.constraints import pointandpoint_coincident
 
 # Create your models here.
 
@@ -26,7 +20,6 @@ class Constraint(models.Model):
         Assembly, on_delete=models.CASCADE, related_name="assembly_constraint"
     )
     type = models.CharField(max_length=50, editable=False)
-    is_explicit = models.BooleanField(default=False, editable=False)
 
     def __str__(self):
         return f"{self.assembly}-{self.type}"
@@ -59,36 +52,27 @@ class CoincidentConstraint(Constraint):
 
     @property
     def residual(self):
-        if self.is_explicit:
-            # send signal to update the other reference
-            # OR
-            # ref2 = self.reference2.get_specific_instance()
-            # ref2.x = ref1.x       ref2.y = ref1.y
-            pass
+        if self.reference1.fixed and self.reference2.fixed:
+            result = None
         else:
             # Construct the residual equation
-            result = None
+            result = None  # Delete once done
             ref1 = self.reference1.get_specific_instance()
             ref2 = self.reference2.get_specific_instance()
-
-            # If ref1.fixed == True:
-            # ref1_matrix = ref1.matrix
-            # Else:
-            # ref1_matrix = jnp.array([x1, y1, 1])
-
-            # If 2 points were selected
-            # if ref1.type == "ReferencePoint" and ref2.type == "ReferencePoint":
-            # result = coincident_constraint(ref1_matrix, ref2_matrix)
-            # If 1 point and 1 line was selected
-            # If 2 lines were selected
+            if ref1.type == "ReferencePoint" and ref2.type == "ReferencePoint":
+                result = pointandpoint_coincident(ref1.matrix, ref2.matrix)
+            elif ref1.type == "ReferencePoint" and ref2.type == "ReferenceLine":
+                # result = self.point_and_line()
+                pass
+            elif ref1.type == "ReferenceLine" and ref2.type == "ReferencePoint":
+                # result = self.point_and_line()  # Same method, just swapped order
+                pass
+            elif ref1.type == "ReferenceLine" and ref2.type == "ReferenceLine":
+                # result = self.line_and_line()
+                pass
+            else:
+                pass
         return result
-
-    # @property
-    # def derivative(self):
-    #     # if is_explicit, return None. For jacobian, if implicit, include, otherwise don't.
-    #     # If is_explicit == false, then derive the residual
-    #     result = jax.grad(self.equation)
-    #     return result
 
     def __str__(self):
         return f"{self.type}"
@@ -100,6 +84,7 @@ class CoincidentConstraint(Constraint):
             raise ValidationError(
                 "The selected reference is already coincident with itself."
             )
+        # Raise error if 2 reference points of the same component is selected
 
     def save(self, *args, **kwargs):
         # Set constraint to explicit if a reference is fixed

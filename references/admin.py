@@ -18,10 +18,14 @@ class ReferenceAdmin(admin.ModelAdmin):
         "assembly",
         "type",
         "label",
-        "status",
-        "hidden",
+        "fixed",
+        "visibility",
     )
-    readonly_fields = ("assembly", "type", "label", "status")
+    readonly_fields = (
+        "assembly",
+        "type",
+        "label",
+    )
 
 
 class ReferencePointInline(admin.TabularInline):
@@ -38,11 +42,11 @@ class ReferenceComponentAdmin(admin.ModelAdmin):
         "assembly",
         "type",
         "label",
-        "status",
+        "fixed",
         "component",
-        "hidden",
+        "visibility",
     )
-    readonly_fields = ("type", "status")
+    readonly_fields = ("type",)
 
 
 @admin.register(ReferencePoint)
@@ -52,14 +56,14 @@ class ReferencePointAdmin(admin.ModelAdmin):
         "assembly",
         "type",
         "label",
-        "status",
+        "fixed",
         "component",
         "location",
         "x_plot",
         "y_plot",
-        "hidden",
+        "visibility",
     )
-    readonly_fields = ("type", "status", "matrix")
+    readonly_fields = ("type", "matrix")
 
 
 @admin.register(ReferenceLine)
@@ -70,10 +74,10 @@ class ReferenceLineAdmin(admin.ModelAdmin):
         "point1",
         "point2",
         "label",
-        "status",
-        "hidden",
+        "fixed",
+        "visibility",
     )
-    readonly_fields = ("type", "status", "matrix")
+    readonly_fields = ("type", "matrix")
 
 
 @admin.register(ReferenceAngle)
@@ -84,10 +88,10 @@ class ReferenceAngleAdmin(admin.ModelAdmin):
         "line1",
         "line2",
         "label",
-        "status",
-        "hidden",
+        "fixed",
+        "visibility",
     )
-    readonly_fields = ("type", "status")
+    readonly_fields = ("type",)
 
 
 class ReferencePointInline(admin.TabularInline):

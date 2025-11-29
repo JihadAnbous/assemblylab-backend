@@ -13,11 +13,18 @@ from django_project.utils.helpers import vector
 
 # Create your models here.
 
+# Keep this in case, but I prefer the "fixed" field instead. Delete if not to be used
 REFERENCE_STATUS_CHOICES = [
     ("Fixed", "Fixed"),
     ("Random", "Random"),
     ("Partially constrained", "Partially constrained"),
     ("Fully defined", "Fully defined"),
+]
+
+REFERENCE_VISIBILITY_CHOICES = [
+    ("Shown", "Shown"),
+    ("Hidden", "Hidden"),
+    ("Translucent", "Translucent"),
 ]
 
 
@@ -27,16 +34,13 @@ class Reference(models.Model):
     )
     type = models.CharField(max_length=50, editable=False)
     label = models.CharField(max_length=100, blank=True, null=True)
-    status = models.CharField(
-        max_length=21,
-        editable=False,
-        choices=REFERENCE_STATUS_CHOICES,
-        default="Random",
+    fixed = models.BooleanField(default=False)
+    visibility = models.CharField(
+        max_length=11, choices=REFERENCE_VISIBILITY_CHOICES, default="Shown"
     )
-    hidden = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.assembly}-{self.type}"
+        return f"{self.label}"
 
     def clean(self):
         super().clean()
@@ -86,7 +90,7 @@ class ReferenceComponent(Reference):
         ReferencePoint.objects.bulk_update(points, ["x_plot", "y_plot"])
 
     def __str__(self):
-        return f"{self.assembly}-{self.component}"
+        return f"{self.label}"
 
     def clean(self):
         super().clean()
@@ -118,19 +122,19 @@ class ReferencePoint(Reference):
 
     @property
     def x(self):
-        if self.status == "Fixed":
+        if self.fixed:
             return self.x_plot
         else:
             return None
 
     @property
     def y(self):
-        if self.status == "Fixed":
+        if self.fixed:
             return self.y_plot
         else:
             return None
 
-    # Used for transform function only
+    # Used for transform function and constraints
     @property
     def matrix(self):
         return jnp.array([self.x_plot, self.y_plot, 1])
@@ -181,7 +185,7 @@ class ReferenceLine(Reference):
         return line_vector
 
     def __str__(self):
-        return f"{self.assembly}-{self.label}"
+        return f"{self.label}"
 
     def clean(self):
         super().clean()
@@ -194,8 +198,8 @@ class ReferenceLine(Reference):
             raise ValidationError("You cannot make a line out of the same point.")
 
     def save(self, *args, **kwargs):
-        if self.point1.status and self.point2.status == "Fixed":
-            self.status = "Fixed"
+        if self.point1.fixed and self.point2.fixed:
+            self.fixed = True
         self.type = "ReferenceLine"
         # Save the instance
         super(ReferenceLine, self).save(*args, **kwargs)
@@ -210,7 +214,7 @@ class ReferenceAngle(Reference):
     )
 
     def __str__(self):
-        return f"{self.assembly}-{self.label}"
+        return f"{self.label}"
 
     def clean(self):
         super().clean()

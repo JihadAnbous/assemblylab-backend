@@ -1,7 +1,21 @@
 import jax
 import jax.numpy as jnp
 
-from .helpers import vector, vector_magnitude, cross_product, dot_product
+from django_project.utils.helpers import (
+    vector,
+    vector_magnitude,
+    cross_product,
+    dot_product,
+)
+
+
+def pointandpoint_coincident(point1, point2):
+    # point1 must be a jax 1D array: [x, y, 1]
+    # point2 must be a jax 1D array: [x, y, 1]
+    # Constraint satisfied when function = 0
+    v = vector(point1, point2)
+    equation = vector_magnitude(v)
+    return equation
 
 
 def coincident_constraint(point1, point2):

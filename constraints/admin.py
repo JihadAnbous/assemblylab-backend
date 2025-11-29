@@ -16,11 +16,10 @@ from .models import (
 
 @admin.register(Constraint)
 class ConstraintAdmin(admin.ModelAdmin):
-    list_display = ("id", "assembly", "type", "is_explicit")
+    list_display = ("id", "assembly", "type")
     readonly_fields = (
         "assembly",
         "type",
-        "is_explicit",
     )
 
 
