@@ -34,10 +34,7 @@ class Reference(models.Model):
     )
     type = models.CharField(max_length=50, editable=False)
     label = models.CharField(max_length=100, blank=True, null=True)
-    fixed = models.BooleanField(default=False)
-    visibility = models.CharField(
-        max_length=11, choices=REFERENCE_VISIBILITY_CHOICES, default="Shown"
-    )
+    fixed = models.BooleanField(default=False, editable=False)
 
     def __str__(self):
         return f"{self.label}"

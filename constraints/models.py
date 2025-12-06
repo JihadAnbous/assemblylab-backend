@@ -38,6 +38,32 @@ class Constraint(models.Model):
             return None
 
 
+class FixedPointConstraint(Constraint):
+    point = models.OneToOneField(
+        ReferencePoint,
+        on_delete=models.CASCADE,
+        related_name="point_fixedpointconstraint",
+    )
+
+    def residual(self, x, y):
+        x_plot = self.point.x_plot
+        y_plot = self.point.y_plot
+        result = (x - x_plot) ** 2 + (y - y_plot) ** 2
+        return result
+
+    def __str__(self):
+        return f"{self.type}"
+
+    def clean(self):
+        super().clean()
+        # Additional validation
+
+    def save(self, *args, **kwargs):
+        self.type = "FixedPointConstraint"
+        # Save the instance
+        super(FixedPointConstraint, self).save(*args, **kwargs)
+
+
 class CoincidentConstraint(Constraint):
     reference1 = models.ForeignKey(
         Reference,

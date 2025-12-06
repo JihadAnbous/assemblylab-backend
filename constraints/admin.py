@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     Constraint,
+    FixedPointConstraint,
     CoincidentConstraint,
     DistanceConstraint,
     AngleConstraint,
@@ -21,6 +22,17 @@ class ConstraintAdmin(admin.ModelAdmin):
         "assembly",
         "type",
     )
+
+
+@admin.register(FixedPointConstraint)
+class FixedPointConstraintAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "assembly",
+        "type",
+        "point",
+    )
+    readonly_fields = ("type",)
 
 
 @admin.register(CoincidentConstraint)
@@ -63,6 +75,11 @@ class VariableDistanceConstraintAdmin(admin.ModelAdmin):
 class VariableAngleConstraintAdmin(admin.ModelAdmin):
     list_display = ("id", "assembly", "type", "angle", "minimum", "maximum")
     readonly_fields = ("type",)
+
+
+class FixedPointConstraintInline(admin.TabularInline):
+    model = FixedPointConstraint
+    extra = 0
 
 
 class CoincidentConstraintInline(admin.TabularInline):
