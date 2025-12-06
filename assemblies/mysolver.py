@@ -14,7 +14,17 @@ class GeometricSolver:
         self.constraints = []
 
     def build_index_map(self):
+        """
+        index_map = {
+                        (point.id, "coordinate"): id,
+                        (3, "x"): 0,
+                        (3, "y"): 1,
+                        (4, "x"): 2,
+                        (4, "y"): 3,
+                    }
+        """
         self.index_map = {}
+        self.points = {}
         var_index = 0
 
         # Get all reference points for this assembly
@@ -22,34 +32,34 @@ class GeometricSolver:
         points = [instance.get_specific_instance() for instance in references]
 
         for point in points:
-            self.index_map[("point", point.id, "x")] = var_index
+            self.points[point.id] = point
+            self.index_map[(point.id, "x")] = var_index
             var_index += 1
-            self.index_map[("point", point.id, "y")] = var_index
+            self.index_map[(point.id, "y")] = var_index
             var_index += 1
 
         return var_index
 
     def get_initial_variables(self):
         """
-        Get initial variable values from current geometry state.
-        Returns a JAX array of initial variable values.
+        x0 = [5,    6,   -2,    0,   10,   -3]
+        Explained below:
+             [0]   [1]   [2]   [3]   [4]   [5]  <- index_map index
+             pt3_x pt3_y pt4_x pt4_y pt5_x pt5_y
         """
-        from .models import ReferencePoint
-
-        num_vars = len(self.index_map) // 2  # Each point has x and y
+        # Initialise Newton Raphson initial guess array 'x0'.
         x0 = np.zeros(len(self.index_map))
-
-        # Populate with current point positions
-        for (entity_type, entity_id, coord), idx in self.index_map.items():
-            if entity_type == "point":
-                point = ReferencePoint.objects.get(id=entity_id)
-                if coord == "x":
-                    x0[idx] = point.x_plot
-                else:  # coord == 'y'
-                    x0[idx] = point.y_plot
+        for (point_id, coordinate), index in self.index_map.items():
+            # Retrieve the point instance with the same index as the index_map from the previously created points array
+            point = self.points[point_id]
+            if coordinate == "x":
+                x0[index] = point.x_plot
+            else:
+                x0[index] = point.y_plot
 
         return jnp.array(x0)
 
+    # UP TO HERE!!!!!!!
     def compute_residuals(self, variables):
         """
         Compute residual vector for all constraints.
