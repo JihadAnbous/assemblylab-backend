@@ -3,7 +3,7 @@ from django.contrib import admin
 from .models import (
     Constraint,
     FixedPointConstraint,
-    CoincidentConstraint,
+    PointPointCoincidentConstraint,
     DistanceConstraint,
     AngleConstraint,
     ParallelConstraint,
@@ -35,9 +35,9 @@ class FixedPointConstraintAdmin(admin.ModelAdmin):
     readonly_fields = ("type",)
 
 
-@admin.register(CoincidentConstraint)
-class CoincidentConstraintAdmin(admin.ModelAdmin):
-    list_display = ("id", "assembly", "type", "reference1", "reference2")
+@admin.register(PointPointCoincidentConstraint)
+class PointPointCoincidentConstraintAdmin(admin.ModelAdmin):
+    list_display = ("id", "assembly", "type", "point1", "point2")
     readonly_fields = ("type",)
 
 
@@ -82,8 +82,8 @@ class FixedPointConstraintInline(admin.TabularInline):
     extra = 0
 
 
-class CoincidentConstraintInline(admin.TabularInline):
-    model = CoincidentConstraint
+class PointPointCoincidentConstraintInline(admin.TabularInline):
+    model = PointPointCoincidentConstraint
     extra = 0
 
 

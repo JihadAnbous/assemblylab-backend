@@ -3,7 +3,7 @@ from django.contrib import admin
 from .models import Assembly
 from constraints.admin import (
     FixedPointConstraintInline,
-    CoincidentConstraintInline,
+    PointPointCoincidentConstraintInline,
     DistanceConstraintInline,
     AngleConstraintInline,
     ParallelConstraintInline,
@@ -30,7 +30,7 @@ class AssemblyAdmin(admin.ModelAdmin):
         ReferenceLineInline,
         ReferenceAngleInline,
         FixedPointConstraintInline,
-        CoincidentConstraintInline,
+        PointPointCoincidentConstraintInline,
         DistanceConstraintInline,
         AngleConstraintInline,
         ParallelConstraintInline,

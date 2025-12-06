@@ -64,40 +64,20 @@ class FixedPointConstraint(Constraint):
         super(FixedPointConstraint, self).save(*args, **kwargs)
 
 
-class CoincidentConstraint(Constraint):
-    reference1 = models.ForeignKey(
-        Reference,
+class PointPointCoincidentConstraint(Constraint):
+    point1 = models.ForeignKey(
+        ReferencePoint,
         on_delete=models.CASCADE,
-        related_name="reference1_coincidentconstraint",
+        related_name="point1_pointpointcoincidentconstraint",
     )
-    reference2 = models.ForeignKey(
-        Reference,
+    point2 = models.ForeignKey(
+        ReferencePoint,
         on_delete=models.CASCADE,
-        related_name="reference2_coincidentconstraint",
+        related_name="point2_pointpointcoincidentconstraint",
     )
 
-    @property
-    def residual(self):
-        if self.reference1.fixed and self.reference2.fixed:
-            result = None
-        else:
-            # Construct the residual equation
-            result = None  # Delete once done
-            ref1 = self.reference1.get_specific_instance()
-            ref2 = self.reference2.get_specific_instance()
-            if ref1.type == "ReferencePoint" and ref2.type == "ReferencePoint":
-                result = pointandpoint_coincident(ref1.matrix, ref2.matrix)
-            elif ref1.type == "ReferencePoint" and ref2.type == "ReferenceLine":
-                # result = self.point_and_line()
-                pass
-            elif ref1.type == "ReferenceLine" and ref2.type == "ReferencePoint":
-                # result = self.point_and_line()  # Same method, just swapped order
-                pass
-            elif ref1.type == "ReferenceLine" and ref2.type == "ReferenceLine":
-                # result = self.line_and_line()
-                pass
-            else:
-                pass
+    def residual(self, x1, y1, x2, y2):
+        result = (x1 - x2) ** 2 + (y1 - y2) ** 2
         return result
 
     def __str__(self):
@@ -106,19 +86,22 @@ class CoincidentConstraint(Constraint):
     def clean(self):
         super().clean()
         # Additional validation
-        if self.reference1 == self.reference2:
+        if self.point1 == self.point2:
             raise ValidationError(
-                "The selected reference is already coincident with itself."
+                "The selected point is already coincident with itself."
             )
-        # Raise error if 2 reference points of the same component is selected
+
+        component1 = self.point1.component if self.point1.component else None
+        component2 = self.point2.component if self.point2.component else None
+        if component1 and component2 and component1 == component2:
+            raise ValidationError(
+                "The selected points cannot be coincident as they are bound by their mutual component's geometry."
+            )
 
     def save(self, *args, **kwargs):
-        # Set constraint to explicit if a reference is fixed
-        if self.reference1.fixed or self.reference2.fixed:
-            self.is_explicit = True
-        self.type = "CoincidentConstraint"
+        self.type = "PointPointCoincidentConstraint"
         # Save the instance
-        super(CoincidentConstraint, self).save(*args, **kwargs)
+        super(PointPointCoincidentConstraint, self).save(*args, **kwargs)
 
 
 class DistanceConstraint(Constraint):
