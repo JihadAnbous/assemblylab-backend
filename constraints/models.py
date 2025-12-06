@@ -116,8 +116,18 @@ class PointLineCoincidentConstraint(Constraint):
         related_name="line_pointlinecoincidentconstraint",
     )
 
-    def residual(self, x1, y1, x2, y2):
-        result = (x1 - x2) ** 2 + (y1 - y2) ** 2
+    def residual(self, px, py, lx1, ly1, lx2, ly2):
+        """
+        Point-to-line distance squared.
+        Point: (px, py)
+        Line: defined by two points (lx1, ly1) and (lx2, ly2)
+        """
+        # Perpendicular distance from point to line
+        numerator = ((ly2 - ly1) * px - (lx2 - lx1) * py + lx2 * ly1 - ly2 * lx1) ** 2
+        denominator = (ly2 - ly1) ** 2 + (lx2 - lx1) ** 2
+        result = numerator / (
+            denominator + 1e-10
+        )  # Small epsilon to avoid division by zero
         return result
 
     def __str__(self):
