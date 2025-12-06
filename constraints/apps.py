@@ -2,5 +2,8 @@ from django.apps import AppConfig
 
 
 class ConstraintsConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'constraints'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "constraints"
+
+    def ready(self):
+        import constraints.signals

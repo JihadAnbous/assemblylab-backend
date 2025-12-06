@@ -1,25 +1,14 @@
-import jax
-import jax.numpy as jnp
-
-from .models import ReferenceComponent, ReferencePoint
+from .models import FixedPointConstraint
+from references.models import ReferencePoint
 from django.db.models.signals import post_save
 
 
-def create_reference_points(sender, instance, created, **kwargs):
-    # Once an ReferenceComponent instance is created
+def fix_reference_point(sender, instance, created, **kwargs):
+    # Once an FixedPointConstraint is created
     if created:
-        # Loop through its Location instances
-        for location in instance.component.component_location.all():
-            ReferencePoint.objects.create(
-                assembly=instance.assembly,
-                type="ReferencePoint",
-                label="Placeholder",
-                status="Random",
-                component=instance,
-                location=location,
-                x_plot=location.x,
-                y_plot=location.y,
-            )
+        # Update the "fixed" field of the reference point
+        instance.point.fixed = True
+        instance.point.save()
 
 
-post_save.connect(create_reference_points, sender=ReferenceComponent)
+post_save.connect(fix_reference_point, sender=FixedPointConstraint)
