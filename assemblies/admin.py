@@ -4,6 +4,7 @@ from .models import Assembly
 from constraints.admin import (
     FixedPointConstraintInline,
     PointPointCoincidentConstraintInline,
+    PointLineCoincidentConstraintInline,
     DistanceConstraintInline,
     AngleConstraintInline,
     ParallelConstraintInline,
@@ -31,6 +32,7 @@ class AssemblyAdmin(admin.ModelAdmin):
         ReferenceAngleInline,
         FixedPointConstraintInline,
         PointPointCoincidentConstraintInline,
+        PointLineCoincidentConstraintInline,
         DistanceConstraintInline,
         AngleConstraintInline,
         ParallelConstraintInline,

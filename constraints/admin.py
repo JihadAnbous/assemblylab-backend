@@ -4,6 +4,7 @@ from .models import (
     Constraint,
     FixedPointConstraint,
     PointPointCoincidentConstraint,
+    PointLineCoincidentConstraint,
     DistanceConstraint,
     AngleConstraint,
     ParallelConstraint,
@@ -38,6 +39,12 @@ class FixedPointConstraintAdmin(admin.ModelAdmin):
 @admin.register(PointPointCoincidentConstraint)
 class PointPointCoincidentConstraintAdmin(admin.ModelAdmin):
     list_display = ("id", "assembly", "type", "point1", "point2")
+    readonly_fields = ("type",)
+
+
+@admin.register(PointLineCoincidentConstraint)
+class PointLineCoincidentConstraintAdmin(admin.ModelAdmin):
+    list_display = ("id", "assembly", "type", "point", "line")
     readonly_fields = ("type",)
 
 
@@ -84,6 +91,11 @@ class FixedPointConstraintInline(admin.TabularInline):
 
 class PointPointCoincidentConstraintInline(admin.TabularInline):
     model = PointPointCoincidentConstraint
+    extra = 0
+
+
+class PointLineCoincidentConstraintInline(admin.TabularInline):
+    model = PointLineCoincidentConstraint
     extra = 0
 
 

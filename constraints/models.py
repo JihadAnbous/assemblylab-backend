@@ -104,6 +104,35 @@ class PointPointCoincidentConstraint(Constraint):
         super(PointPointCoincidentConstraint, self).save(*args, **kwargs)
 
 
+class PointLineCoincidentConstraint(Constraint):
+    point = models.ForeignKey(
+        ReferencePoint,
+        on_delete=models.CASCADE,
+        related_name="point_pointlinecoincidentconstraint",
+    )
+    line = models.ForeignKey(
+        ReferenceLine,
+        on_delete=models.CASCADE,
+        related_name="line_pointlinecoincidentconstraint",
+    )
+
+    def residual(self, x1, y1, x2, y2):
+        result = (x1 - x2) ** 2 + (y1 - y2) ** 2
+        return result
+
+    def __str__(self):
+        return f"{self.type}"
+
+    def clean(self):
+        super().clean()
+        # Additional validation
+
+    def save(self, *args, **kwargs):
+        self.type = "PointLineCoincidentConstraint"
+        # Save the instance
+        super(PointLineCoincidentConstraint, self).save(*args, **kwargs)
+
+
 class DistanceConstraint(Constraint):
     line = models.ForeignKey(
         ReferenceLine, on_delete=models.CASCADE, related_name="line_distanceconstraint"
