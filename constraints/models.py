@@ -95,7 +95,7 @@ class PointPointCoincidentConstraint(Constraint):
         component2 = self.point2.component if self.point2.component else None
         if component1 and component2 and component1 == component2:
             raise ValidationError(
-                "The selected points cannot be coincident as they are bound by their mutual component's geometry."
+                "The selected points cannot be coincident as they belong to the same component."
             )
 
     def save(self, *args, **kwargs):
