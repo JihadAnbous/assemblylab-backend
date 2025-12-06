@@ -31,11 +31,12 @@ def distance_constraint(point1, point2, distance):
     # point1 must be a jax 1D array: [x, y, 1]
     # point2 must be a jax 1D array: [x, y, 1]
     # given_distance must be a float
-    # Constraint satisfied when function = 0
+    # Constraint satisfied when residual = 0
     v = vector(point1, point2)
-    v_mag = vector_magnitude(v)
-    function = v_mag - distance
-    return function
+    v_mag_squared = jnp.dot(v, v)  # Faster than taking sqrt
+    distance_squared = distance**2
+    residual = v_mag_squared - distance_squared
+    return residual
 
 
 def angle_constraint(vector1, vector2, angle):

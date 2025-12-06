@@ -10,7 +10,7 @@ from django.apps import apps
 from assemblies.models import Assembly
 from references.models import Reference, ReferencePoint, ReferenceLine, ReferenceAngle
 
-from .utils.constraints import pointandpoint_coincident
+from django_project.utils.helpers import dot_product, vector_magnitude
 
 # Create your models here.
 
@@ -117,17 +117,10 @@ class PointLineCoincidentConstraint(Constraint):
     )
 
     def residual(self, px, py, lx1, ly1, lx2, ly2):
-        """
-        Point-to-line distance squared.
-        Point: (px, py)
-        Line: defined by two points (lx1, ly1) and (lx2, ly2)
-        """
         # Perpendicular distance from point to line
         numerator = ((ly2 - ly1) * px - (lx2 - lx1) * py + lx2 * ly1 - ly2 * lx1) ** 2
         denominator = (ly2 - ly1) ** 2 + (lx2 - lx1) ** 2
-        result = numerator / (
-            denominator + 1e-10
-        )  # Small epsilon to avoid division by zero
+        result = numerator / denominator
         return result
 
     def __str__(self):
@@ -149,6 +142,12 @@ class DistanceConstraint(Constraint):
     )
     value = models.FloatField(validators=[MinValueValidator(0.0)])
 
+    def residual(self, lx1, ly1, lx2, ly2):
+        distance_squared = (lx2 - lx1) ** 2 + (ly2 - ly1) ** 2
+        target_squared = self.value**2
+        result = (distance_squared - target_squared) ** 2
+        return result
+
     def __str__(self):
         return f"{self.type}"
 
@@ -167,6 +166,15 @@ class AngleConstraint(Constraint):
         ReferenceAngle, on_delete=models.CASCADE, related_name="angle_angleconstraint"
     )
     value = models.FloatField(help_text="Degrees")
+
+    def residual(self, x1, y1, x2, y2, x3, y3, x4, y4):
+        angle = jnp.deg2rad(self.value)
+        vector1 = jnp.array([x2 - x1, y2 - y1, 1])
+        vector2 = jnp.array([x4 - x3, y4 - y3, 1])
+        u = dot_product(vector1, vector2)
+        v = vector_magnitude(vector1) * vector_magnitude(vector2)
+        result = (jnp.cos(angle) - u / v) ** 2
+        return result
 
     def __str__(self):
         return f"{self.type}"
