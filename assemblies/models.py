@@ -5,6 +5,8 @@ from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
 
+from .mysolver import GeometricSolver
+
 # Create your models here.
 
 ASSEMBLY_STATUS_CHOICES = [
@@ -28,3 +30,10 @@ class Assembly(models.Model):
 
     def __str__(self):
         return f"{self.name}"
+
+    def solve_geometry(self):
+        solver = GeometricSolver(self, max_iterations=100, tolerance=1e-6)
+        result = solver.solve()
+        if result["success"]:
+            # solver.update_geometry(result["variables"])
+            print(f"Success: {result['success']}")

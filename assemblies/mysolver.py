@@ -159,13 +159,7 @@ class GeometricSolver:
 
     def compute_jacobian(self, variables):
         """
-        Compute Jacobian matrix using automatic differentiation.
-
-        Args:
-            variables: JAX array of current variable values
-
-        Returns:
-            JAX array representing the Jacobian matrix
+        Derive the residuals using jacfwd()
         """
         jac_fn = jacfwd(self.compute_residuals)
         return jac_fn(variables)
@@ -186,6 +180,7 @@ class GeometricSolver:
         num_vars = self.build_index_map()
         variables = self.get_initial_variables()
 
+        # If no constraints, end method
         if len(self.constraints) == 0:
             return {
                 "success": True,
@@ -196,10 +191,12 @@ class GeometricSolver:
 
         # Newton-Raphson iteration
         for iteration in range(self.max_iterations):
-            # Compute residuals and check convergence
+            # Compute residuals
             residuals = self.compute_residuals(variables)
+            # Calculate the residual_norm (error of all variables)
             residual_norm = float(jnp.linalg.norm(residuals))
 
+            # Check covergence
             if residual_norm < self.tolerance:
                 return {
                     "success": True,
@@ -208,7 +205,7 @@ class GeometricSolver:
                     "iterations": iteration,
                 }
 
-            # Compute Jacobian
+            # Otherwise, compute Jacobian
             jacobian = self.compute_jacobian(variables)
 
             # Solve J * delta = -residuals
