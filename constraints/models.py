@@ -142,8 +142,8 @@ class DistanceConstraint(Constraint):
     )
     value = models.FloatField(validators=[MinValueValidator(0.0)])
 
-    def residual(self, lx1, ly1, lx2, ly2):
-        distance_squared = (lx2 - lx1) ** 2 + (ly2 - ly1) ** 2
+    def residual(self, x1, y1, x2, y2):
+        distance_squared = (x2 - x1) ** 2 + (y2 - y1) ** 2
         target_squared = self.value**2
         result = (distance_squared - target_squared) ** 2
         return result

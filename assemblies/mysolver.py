@@ -59,92 +59,99 @@ class GeometricSolver:
 
         return jnp.array(x0)
 
-    # UP TO HERE!!!!!!!
-    def compute_residuals(self, variables):
-        """
-        Compute residual vector for all constraints.
-
-        Args:
-            variables: JAX array of current variable values
-
-        Returns:
-            JAX array of residual values
-        """
+    def build_residuals(self, variables):
         residuals = []
 
+        # Get all constraints for this assembly
+        self.constraints = list(self.assembly.assembly_constraint.all())
+
         for constraint in self.constraints:
-            specific = constraint.get_specific_instance()
-            if not specific:
-                continue
+            specific_constraint = constraint.get_specific_instance()
 
-            # Extract variable values based on constraint type
-            if specific.type == "FixedPointConstraint":
-                x_idx = self.index_map[("point", specific.point.id, "x")]
-                y_idx = self.index_map[("point", specific.point.id, "y")]
-                r = specific.residual(variables[x_idx], variables[y_idx])
+            # Extract variable values from the index map based on the constraint type
+            if specific_constraint.type == "FixedPointConstraint":
+                x_index = self.index_map[(specific_constraint.point.id, "x")]
+                y_index = self.index_map[(specific_constraint.point.id, "y")]
+                r = specific_constraint.residual(variables[x_index], variables[y_index])
                 residuals.append(r)
 
-            elif specific.type == "PointPointCoincidentConstraint":
-                x1_idx = self.index_map[("point", specific.point1.id, "x")]
-                y1_idx = self.index_map[("point", specific.point1.id, "y")]
-                x2_idx = self.index_map[("point", specific.point2.id, "x")]
-                y2_idx = self.index_map[("point", specific.point2.id, "y")]
-                r = specific.residual(
-                    variables[x1_idx],
-                    variables[y1_idx],
-                    variables[x2_idx],
-                    variables[y2_idx],
+            elif specific_constraint.type == "PointPointCoincidentConstraint":
+                x1_index = self.index_map[(specific_constraint.point1.id, "x")]
+                y1_index = self.index_map[(specific_constraint.point1.id, "y")]
+                x2_index = self.index_map[(specific_constraint.point2.id, "x")]
+                y2_index = self.index_map[(specific_constraint.point2.id, "y")]
+                r = specific_constraint.residual(
+                    variables[x1_index],
+                    variables[y1_index],
+                    variables[x2_index],
+                    variables[y2_index],
                 )
                 residuals.append(r)
 
-            elif specific.type == "PointLineCoincidentConstraint":
-                px_idx = self.index_map[("point", specific.point.id, "x")]
-                py_idx = self.index_map[("point", specific.point.id, "y")]
-                lx1_idx = self.index_map[("point", specific.line.point1.id, "x")]
-                ly1_idx = self.index_map[("point", specific.line.point1.id, "y")]
-                lx2_idx = self.index_map[("point", specific.line.point2.id, "x")]
-                ly2_idx = self.index_map[("point", specific.line.point2.id, "y")]
-                r = specific.residual(
-                    variables[px_idx],
-                    variables[py_idx],
-                    variables[lx1_idx],
-                    variables[ly1_idx],
-                    variables[lx2_idx],
-                    variables[ly2_idx],
+            elif specific_constraint.type == "PointLineCoincidentConstraint":
+                px_index = self.index_map[(specific_constraint.point.id, "x")]
+                py_index = self.index_map[(specific_constraint.point.id, "y")]
+                lx1_index = self.index_map[(specific_constraint.line.point1.id, "x")]
+                ly1_index = self.index_map[(specific_constraint.line.point1.id, "y")]
+                lx2_index = self.index_map[(specific_constraint.line.point2.id, "x")]
+                ly2_index = self.index_map[(specific_constraint.line.point2.id, "y")]
+                r = specific_constraint.residual(
+                    variables[px_index],
+                    variables[py_index],
+                    variables[lx1_index],
+                    variables[ly1_index],
+                    variables[lx2_index],
+                    variables[ly2_index],
                 )
                 residuals.append(r)
 
-            elif specific.type == "DistanceConstraint":
-                lx1_idx = self.index_map[("point", specific.line.point1.id, "x")]
-                ly1_idx = self.index_map[("point", specific.line.point1.id, "y")]
-                lx2_idx = self.index_map[("point", specific.line.point2.id, "x")]
-                ly2_idx = self.index_map[("point", specific.line.point2.id, "y")]
-                r = specific.residual(
-                    variables[lx1_idx],
-                    variables[ly1_idx],
-                    variables[lx2_idx],
-                    variables[ly2_idx],
+            elif specific_constraint.type == "DistanceConstraint":
+                x1_index = self.index_map[(specific_constraint.line.point1.id, "x")]
+                y1_index = self.index_map[(specific_constraint.line.point1.id, "y")]
+                x2_index = self.index_map[(specific_constraint.line.point2.id, "x")]
+                y2_index = self.index_map[(specific_constraint.line.point2.id, "y")]
+                r = specific_constraint.residual(
+                    variables[x1_index],
+                    variables[y1_index],
+                    variables[x2_index],
+                    variables[y2_index],
                 )
                 residuals.append(r)
 
-            elif specific.type == "AngleConstraint":
-                x1_idx = self.index_map[("point", specific.angle.line1.point1.id, "x")]
-                y1_idx = self.index_map[("point", specific.angle.line1.point1.id, "y")]
-                x2_idx = self.index_map[("point", specific.angle.line1.point2.id, "x")]
-                y2_idx = self.index_map[("point", specific.angle.line1.point2.id, "y")]
-                x3_idx = self.index_map[("point", specific.angle.line2.point1.id, "x")]
-                y3_idx = self.index_map[("point", specific.angle.line2.point1.id, "y")]
-                x4_idx = self.index_map[("point", specific.angle.line2.point2.id, "x")]
-                y4_idx = self.index_map[("point", specific.angle.line2.point2.id, "y")]
-                r = specific.residual(
-                    variables[x1_idx],
-                    variables[y1_idx],
-                    variables[x2_idx],
-                    variables[y2_idx],
-                    variables[x3_idx],
-                    variables[y3_idx],
-                    variables[x4_idx],
-                    variables[y4_idx],
+            elif specific_constraint.type == "AngleConstraint":
+                x1_index = self.index_map[
+                    (specific_constraint.angle.line1.point1.id, "x")
+                ]
+                y1_index = self.index_map[
+                    (specific_constraint.angle.line1.point1.id, "y")
+                ]
+                x2_index = self.index_map[
+                    (specific_constraint.angle.line1.point2.id, "x")
+                ]
+                y2_index = self.index_map[
+                    (specific_constraint.angle.line1.point2.id, "y")
+                ]
+                x3_index = self.index_map[
+                    (specific_constraint.angle.line2.point1.id, "x")
+                ]
+                y3_index = self.index_map[
+                    (specific_constraint.angle.line2.point1.id, "y")
+                ]
+                x4_index = self.index_map[
+                    (specific_constraint.angle.line2.point2.id, "x")
+                ]
+                y4_index = self.index_map[
+                    (specific_constraint.angle.line2.point2.id, "y")
+                ]
+                r = specific_constraint.residual(
+                    variables[x1_index],
+                    variables[y1_index],
+                    variables[x2_index],
+                    variables[y2_index],
+                    variables[x3_index],
+                    variables[y3_index],
+                    variables[x4_index],
+                    variables[y4_index],
                 )
                 residuals.append(r)
 
