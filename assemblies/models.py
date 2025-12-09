@@ -34,6 +34,5 @@ class Assembly(models.Model):
     def solve_geometry(self):
         solver = GeometricSolver(self, max_iterations=100, tolerance=1e-6)
         result = solver.solve()
-        if result["success"]:
-            # solver.update_geometry(result["variables"])
-            print(f"Success: {result['success']}")
+        print(f"Success: {result['success']}")
+        print(f"Message: {result['message']}")

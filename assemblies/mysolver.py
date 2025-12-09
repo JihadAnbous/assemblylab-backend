@@ -161,7 +161,7 @@ class GeometricSolver:
         """
         Derive the residuals using jacfwd()
         """
-        jac_fn = jacfwd(self.compute_residuals)
+        jac_fn = jacfwd(self.build_residuals)
         return jac_fn(variables)
 
     def solve(self):
@@ -180,6 +180,8 @@ class GeometricSolver:
         num_vars = self.build_index_map()
         variables = self.get_initial_variables()
 
+        self.constraints = list(self.assembly.assembly_constraint.all())
+
         # If no constraints, end method
         if len(self.constraints) == 0:
             return {
@@ -187,12 +189,13 @@ class GeometricSolver:
                 "variables": variables,
                 "residual_norm": 0.0,
                 "iterations": 0,
+                "message": "No constraints",
             }
 
         # Newton-Raphson iteration
         for iteration in range(self.max_iterations):
             # Compute residuals
-            residuals = self.compute_residuals(variables)
+            residuals = self.build_residuals(variables)
             # Calculate the residual_norm (error of all variables)
             residual_norm = float(jnp.linalg.norm(residuals))
 
@@ -203,6 +206,7 @@ class GeometricSolver:
                     "variables": variables,
                     "residual_norm": residual_norm,
                     "iterations": iteration,
+                    "message": "Converged",
                 }
 
             # Otherwise, compute Jacobian
@@ -218,6 +222,7 @@ class GeometricSolver:
                     "residual_norm": residual_norm,
                     "iterations": iteration,
                     "error": "Singular Jacobian",
+                    "message": "Singular Jacobian",
                 }
 
             # Update variables
@@ -230,6 +235,7 @@ class GeometricSolver:
             "residual_norm": float(jnp.linalg.norm(self.compute_residuals(variables))),
             "iterations": self.max_iterations,
             "error": "Max iterations reached",
+            "message": "Max iterations reached",
         }
 
     def update_geometry(self, variables):
@@ -239,13 +245,13 @@ class GeometricSolver:
         Args:
             variables: JAX array of solved variable values
         """
-        from .models import ReferencePoint
+        for (point_id, coordinate), index in self.index_map.items():
+            point = self.points[point_id]
+            if coordinate == "x":
+                point.x_plot = float(variables[index])
+            elif coordinate == "y":
+                point.y_plot = float(variables[index])
+            point.save(update_fields=["x_plot", "y_plot"])
+        from references.models import ReferencePoint
 
-        for (entity_type, entity_id, coord), idx in self.index_map.items():
-            if entity_type == "point":
-                point = ReferencePoint.objects.get(id=entity_id)
-                if coord == "x":
-                    point.x_plot = float(variables[idx])
-                elif coord == "y":
-                    point.y_plot = float(variables[idx])
-                point.save()
+        ReferencePoint.objects.bulk_update(self.points.values(), ["x_plot", "y_plot"])

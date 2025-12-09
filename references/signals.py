@@ -14,7 +14,6 @@ def create_reference_points(sender, instance, created, **kwargs):
                 assembly=instance.assembly,
                 type="ReferencePoint",
                 label="Placeholder",
-                status="Random",
                 component=instance,
                 location=location,
                 x_plot=location.x,
