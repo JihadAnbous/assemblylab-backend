@@ -38,34 +38,17 @@ random_equation_gradient = jax.grad(random_equation)
 print(f"Random equation gradient:\n", random_equation_gradient)
 
 
-# Derivative or gradient - example 2
-def constraint_distance(x_1, y_1, d_1):
-    return
+# Derivative or gradient - example 1
+def speed_equation(time, speed):
+    YIELD_KT = 15.0
+    BURST_HEIGHT = 1000.0
+
+    return YIELD_KT * time**2 + 3 * time + BURST_HEIGHT * speed
 
 
-def constraint_distance(given_point, constrained_point, given_distance):
-    # given_point must be a 1x2 jax array
-    # constrained_point must be a 1x2 jax array
-    # given_distance must be a float
-    x1 = given_point[0]
-    y1 = given_point[1]
-    x = constrained_point[0]
-    y = constrained_point[1]
-    function = jnp.sqrt((x - x1) ** 2 + (y - y1) ** 2) - given_distance
-    return function
+speed_equation_gradient = jax.grad(speed_equation)
+print(f"Speed equation gradient:\n", speed_equation_gradient)
 
-
-# Example 1: Points that satisfy the constraint
-a = jnp.array([0.0, 0.0])
-b = jnp.array([3.0, 4.0])  # This is distance 5 from origin
-d = 5.0
-
-result = constraint_distance(a, b, d)
-print(f"Constraint value: {result}")  # Should be 0.0 (constraint satisfied)
-
-# Derive the function
-constraint_distance_gradient = jax.grad(constraint_distance)
-print(constraint_distance_gradient)
 
 current_angle = 45
 minimum = 0

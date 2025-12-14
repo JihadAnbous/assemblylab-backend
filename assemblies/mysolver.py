@@ -40,6 +40,7 @@ class GeometricSolver:
 
         return var_index
 
+    # Put this in beginning of the solver
     def get_initial_variables(self):
         """
         x0 = [5,    6,   -2,    0,   10,   -3]
