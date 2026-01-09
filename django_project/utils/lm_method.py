@@ -1,127 +1,215 @@
 import jax
 import jax.numpy as jnp
-from jax import grad, jacfwd
 import numpy as np
-import sympy as sp
+
+from dataclasses import dataclass
+from jax import grad, jacfwd
+from sympy import Symbol, diff
 
 # Levenberg-Marquardt method (LM method)
+# `python -m django_project.utils.lm_method`
 
 # Points
-# Create an index map
+@dataclass
+class Point:
+    x: float
+    y: float
+    label: str
+    id: int
 
-# Variables array
+# Test points
+A = Point(x=0, y=0, label="A", id=1)
+B = Point(x=0, y=0, label="B", id=7)
+C = Point(x=0, y=0, label="C", id=11)
 
+points = (A, B, C)
+point_map = {}
+for i, p in enumerate(points):
+    point_map[p.id] = i
+print(f"Point map:\n", point_map)
 
-# Residuals
-def calculate_residuals(beta):
-    x, y, z = beta
-    r1 = x**2 + y - 5
-    r2 = z * np.sin(x) - 1
-    return np.array([r1, r2])
-
-
-# Jacobian [m x n] matrix
-# m : number of residuals | rows
-# n : number of variables | columns
-def calculate_jacobian(beta):
-    x, y, z = beta
-    # Row 1 derivatives
-    dr1_dx = 2 * x
-    dr1_dy = 1
-    dr1_dz = 0
-
-    # Row 2 derivatives
-    dr2_dx = z * np.cos(x)
-    dr2_dy = 0
-    dr2_dz = np.sin(x)
-
-    return np.array([[dr1_dx, dr1_dy, dr1_dz], [dr2_dx, dr2_dy, dr2_dz]])
+# Variables array - MOST LIKELY DO NOT NEED BUT DOING IT ANYWAY
+vars = [0] * len(points)*2
+for i, p in enumerate(points):
+    vars[2*i] = Symbol(f'x{p.id}')
+    vars[2*i+1] = Symbol(f'y{p.id}')
+print(f"Variables:\n" ,vars) 
 
 
-# Initial setup
-beta = np.array([1.0, 1.0, 1.0])  # Initial guess [x, y, z]
-lam = 0.1  # Damping factor
-tol = 1e-8  # Convergence tolerance
-max_iter = 50  # Maximum iterations
+# Constraints
+@dataclass
+class CoincidentConstraint:
+    point_1: Point
+    point_2: Point
+    point_map: dict
+    
+    @property
+    def symbols(self):
+        """Returns the specific SymPy symbols for this constraint."""
+        return (Symbol(f'x{self.point_1.id}'), Symbol(f'x{self.point_2.id}'))
 
-# Solver
-# Loop through the maximum iterations
-for i in range(max_iter):
-    r = calculate_residuals(beta)
-    J = calculate_jacobian(beta)
+    @property
+    def r(self):
+        """The symbolic residual expression."""
+        x1, x2 = self.symbols
+        return x1 - x2
+    
+    @property
+    def j(self):
+        """Returns {matrix_column_index: derivative_value}"""
+        x1, x2 = self.symbols
+        
+        # We use the point_map to get the 'counter' (index) for each ID
+        index1 = self.point_map[self.point_1.id]
+        index2 = self.point_map[self.point_2.id]
+        
+        return {
+            index1: diff(self.r, x1),
+            index2: diff(self.r, x2)
+        }
 
-    # Sum of Squares - Sum of residual errors
-    S_old = np.sum(r**2)
+# Test constraints
+c1 = CoincidentConstraint(A, B, point_map)
+c2 = CoincidentConstraint(B, C, point_map)
+constraints = [c1.r, c2.r]
+print(f"Constraints/residuals:\n" ,constraints) 
 
-    # (J^T J + lambda * I) * delta = J^T * r
-    jtj = J.T @ J
-    gradient = J.T @ r
+# Jacobian map
+jacobian_map = [c1.j, c2.j]
+print(f"Jacobian map:\n", jacobian_map)
 
-    # The LM update (Damping)
-    H_damped = jtj + lam * np.eye(len(beta))
+# Jacobian
+# rows = total number of variables = n
+rows = len(point_map)
+# columns = total number of constraints = m
+columns = len(constraints)
 
-    try:
-        # H_damped * delta_beta = gradient > np.linalg.solve() finds delta_beta
-        delta_beta = np.linalg.solve(H_damped, gradient)
-    except np.linalg.LinAlgError:
-        # If the matrix is still singular/non-invertible, increase damping
-        lam = lam * 10
-        continue  # Skip the rest of this iteration
+# 1. Initialize a matrix of zeros
+jacobian = np.zeros((columns, rows))
 
-    # Test the new position
-    beta_new = beta - delta_beta
-    r_new = calculate_residuals(beta_new)
-    S_new = np.sum(r_new**2)
+# 2. Populate the matrix
+for row_index, sparse_row in enumerate(jacobian_map):
+    for col_index, value in sparse_row.items():
+        jacobian[row_index, col_index] = value
 
-    if S_new < S_old:
-        # Success!
-        print(f"Iter {i}: Error {S_new:.6f}, lam {lam:.4f}")
-        beta = beta_new
-        lam = lam / 10  # Get faster
-        if np.linalg.norm(delta_beta) < tol:
-            print("Converged!")
-            break
-    else:
-        # Failure!
-        lam = lam * 10  # Get more stable
+print("Jacobian (NumPy):\n", jacobian)
 
-print(f"\nFinal Parameters:\nx: {beta[0]:.4f}\ny: {beta[1]:.4f}\nz: {beta[2]:.4f}")
+''' 
+Errors so far:
+- constraints do not include y1 - y2
+- jacobian does not include y values... do we need them?
+'''
 
-
-# Automating it with sympy
-
-
-def setup_system(equations_list, variables_list):
-    """
-    equations_list: List of strings like ["x**2 + y - 5", "z * sin(x) - 1"]
-    variables_list: List of strings like ["x", "y", "z"]
-    """
-    # 1. Create symbolic objects
-    symbols = sp.symbols(variables_list)
-
-    # 2. Parse the strings into SymPy expressions
-    exprs = [sp.parse_expr(eq) for eq in equations_list]
-
-    # 3. Automatically calculate the Jacobian matrix symbolically
-    # This is the 'm x n' matrix of partial derivatives
-    symbolic_jacobian = sp.Matrix(exprs).jacobian(symbols)
-
-    # 4. Convert SymPy expressions into fast NumPy functions
-    # This "compiles" the math so it's as fast as your manual code
-    calc_r = sp.lambdify([symbols], exprs, "numpy")
-    calc_j = sp.lambdify([symbols], symbolic_jacobian, "numpy")
-
-    return calc_r, calc_j
+# # Residuals
+# def calculate_residuals(beta):
+#     x, y, z = beta
+#     r1 = x**2 + y - 5
+#     r2 = z * np.sin(x) - 1
+#     return np.array([r1, r2])
 
 
-# --- EXAMPLE USER INPUT ---
-user_vars = ["x", "y", "z"]
-user_eqs = ["x**2 + y - 5", "z * sin(x) - 1"]
+# # Jacobian [m x n] matrix
+# # m : number of residuals | rows
+# # n : number of variables | columns
+# def calculate_jacobian(beta):
+#     x, y, z = beta
+#     # Row 1 derivatives
+#     dr1_dx = 2 * x
+#     dr1_dy = 1
+#     dr1_dz = 0
 
-# Initialize the system
-calculate_residuals, calculate_jacobian = setup_system(user_eqs, user_vars)
+#     # Row 2 derivatives
+#     dr2_dx = z * np.cos(x)
+#     dr2_dy = 0
+#     dr2_dz = np.sin(x)
 
-# Now your LM loop stays exactly the same!
-beta = np.array([1.0, 1.0, 1.0])
-r = np.array(calculate_residuals(beta))
-J = np.array(calculate_jacobian(beta))
+#     return np.array([[dr1_dx, dr1_dy, dr1_dz], [dr2_dx, dr2_dy, dr2_dz]])
+
+
+# # Initial setup
+# beta = np.array([1.0, 1.0, 1.0])  # Initial guess [x, y, z]
+# lam = 0.1  # Damping factor
+# tol = 1e-8  # Convergence tolerance
+# max_iter = 50  # Maximum iterations
+
+# # Solver
+# # Loop through the maximum iterations
+# for i in range(max_iter):
+#     r = calculate_residuals(beta)
+#     J = calculate_jacobian(beta)
+
+#     # Sum of Squares - Sum of residual errors
+#     S_old = np.sum(r**2)
+
+#     # (J^T J + lambda * I) * delta = J^T * r
+#     jtj = J.T @ J
+#     gradient = J.T @ r
+
+#     # The LM update (Damping)
+#     H_damped = jtj + lam * np.eye(len(beta))
+
+#     try:
+#         # H_damped * delta_beta = gradient > np.linalg.solve() finds delta_beta
+#         delta_beta = np.linalg.solve(H_damped, gradient)
+#     except np.linalg.LinAlgError:
+#         # If the matrix is still singular/non-invertible, increase damping
+#         lam = lam * 10
+#         continue  # Skip the rest of this iteration
+
+#     # Test the new position
+#     beta_new = beta - delta_beta
+#     r_new = calculate_residuals(beta_new)
+#     S_new = np.sum(r_new**2)
+
+#     if S_new < S_old:
+#         # Success!
+#         print(f"Iter {i}: Error {S_new:.6f}, lam {lam:.4f}")
+#         beta = beta_new
+#         lam = lam / 10  # Get faster
+#         if np.linalg.norm(delta_beta) < tol:
+#             print("Converged!")
+#             break
+#     else:
+#         # Failure!
+#         lam = lam * 10  # Get more stable
+
+# print(f"\nFinal Parameters:\nx: {beta[0]:.4f}\ny: {beta[1]:.4f}\nz: {beta[2]:.4f}")
+
+
+# # Automating it with sympy
+
+
+# def setup_system(equations_list, variables_list):
+#     """
+#     equations_list: List of strings like ["x**2 + y - 5", "z * sin(x) - 1"]
+#     variables_list: List of strings like ["x", "y", "z"]
+#     """
+#     # 1. Create symbolic objects
+#     symbols = sp.symbols(variables_list)
+
+#     # 2. Parse the strings into SymPy expressions
+#     exprs = [sp.parse_expr(eq) for eq in equations_list]
+
+#     # 3. Automatically calculate the Jacobian matrix symbolically
+#     # This is the 'm x n' matrix of partial derivatives
+#     symbolic_jacobian = sp.Matrix(exprs).jacobian(symbols)
+
+#     # 4. Convert SymPy expressions into fast NumPy functions
+#     # This "compiles" the math so it's as fast as your manual code
+#     calc_r = sp.lambdify([symbols], exprs, "numpy")
+#     calc_j = sp.lambdify([symbols], symbolic_jacobian, "numpy")
+
+#     return calc_r, calc_j
+
+
+# # --- EXAMPLE USER INPUT ---
+# user_vars = ["x", "y", "z"]
+# user_eqs = ["x**2 + y - 5", "z * sin(x) - 1"]
+
+# # Initialize the system
+# calculate_residuals, calculate_jacobian = setup_system(user_eqs, user_vars)
+
+# # Now your LM loop stays exactly the same!
+# beta = np.array([1.0, 1.0, 1.0])
+# r = np.array(calculate_residuals(beta))
+# J = np.array(calculate_jacobian(beta))
