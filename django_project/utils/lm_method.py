@@ -25,6 +25,9 @@ B = Point(x=3, y=90, label="B", id=7)
 C = Point(x=98, y=-245, label="C", id=11)
 
 points = (A, B, C)
+print(f"Points:")
+for p in points:
+    print(p.label, ": (", p.x, ",", p.y, ")")
 point_map = {}
 for i, p in enumerate(points):
     point_map[p.id] = i
@@ -175,6 +178,6 @@ for i, p in enumerate(points):
     p.x = beta[2 * i]
     p.y = beta[2 * i + 1]
 
-print(f"A: ({A.x}, {A.y})")
-print(f"B: ({B.x}, {B.y})")
-print(f"C: ({C.x}, {C.y})")
+print(f"Updated points:")
+for p in points:
+    print(p.label, ": (", p.x, ",", p.y, ")")
