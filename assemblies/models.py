@@ -70,7 +70,20 @@ class Assembly(models.Model):
 
     @property
     def constraints(self):
-        return 0
+        """
+        Returns the mathematical residuals (r) for all specific constraints.
+        """
+        from constraints.models import Constraint
+        # Get all base constraints
+        base_constraints = Constraint.objects.filter(assembly=self)
+        
+        result = []
+        for base in base_constraints:
+            specific = base.get_specific_instance()
+            if specific and hasattr(specific, 'r'):
+                # Pass point_map to 'r' if 'r' needs to know the indices
+                result.extend(specific.r) 
+        return result
 
     @property
     def jacobian_map(self):

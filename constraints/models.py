@@ -29,6 +29,12 @@ class Constraint(models.Model):
         super().clean()
         # Additional validation
 
+    # This could replace the type override later
+    def save(self, *args, **kwargs):
+        if not self.type:
+            self.type = self.__class__.__name__
+        super().save(*args, **kwargs)
+
     def get_specific_instance(self):
         # Get the model class using the type field
         specific_model = apps.get_model(app_label="constraints", model_name=self.type)
@@ -57,6 +63,7 @@ class FixedPointConstraint(Constraint):
         self.type = "FixedPointConstraint"
         # Save the instance
         super(FixedPointConstraint, self).save(*args, **kwargs)
+
 
     @property
     def symbols(self):

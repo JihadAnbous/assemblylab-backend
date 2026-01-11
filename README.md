@@ -14,7 +14,7 @@ Stop a container:
 # Django commands
 
 Create migration files:  
-`docker-compose exec web python manage.py makemigrations accounts applications attachments components customers products vendors`  
+`docker-compose exec web python manage.py makemigrations accounts assemblies components constraints references`  
 Apply migration files to database:  
 `docker-compose exec web python manage.py migrate`  
 Create admin user:  
