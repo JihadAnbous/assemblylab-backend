@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from jax import grad, jacfwd
 from sympy import Symbol, diff
+import numpy as np
 
 from django.conf import settings
 from django.db import models
@@ -98,6 +99,20 @@ class Assembly(models.Model):
             specific = base.get_specific_instance()
             if specific and hasattr(specific, 'j'):
                 result.extend(specific.j) 
+        return result
+
+    @property
+    def jacobian(self):
+        rows = len(self.constraints)
+        cols = len(self.point_map) * 2
+        result = np.zeros((rows, cols))
+
+        # "sparse_row" is each dictionary instance in jacobian_map: (e.g., {0: 1, 2: -1})
+        # "value" is the derivative value of each dictionary instance
+        for row_index, sparse_row in enumerate(self.jacobian_map):
+            for col_index, value in sparse_row.items():
+                result[row_index, col_index] = value
+        
         return result
 
     # constraints = []

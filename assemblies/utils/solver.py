@@ -99,6 +99,8 @@ for c in [c1, c2]:
 print(f"Constraints/residuals:\n", constraints)
 print(f"Jacobian map:\n", jacobian_map)
 
+"""Above has been moved as property fields to Assembly model"""
+
 # Create the Jacobian matrix
 rows = len(constraints)
 cols = len(points) * 2
@@ -111,6 +113,8 @@ for row_index, sparse_row in enumerate(jacobian_map):
         jacobian[row_index, col_index] = value
 
 print("Jacobian (NumPy):\n", jacobian)
+
+"""Above has been moved as property fields to Assembly model"""
 
 """
 Solver section
