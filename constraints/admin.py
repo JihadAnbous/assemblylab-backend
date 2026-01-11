@@ -33,13 +33,13 @@ class FixedPointConstraintAdmin(admin.ModelAdmin):
         "type",
         "point",
     )
-    readonly_fields = ("type",)
+    readonly_fields = ("type", "symbols", "r", "j")
 
 
 @admin.register(PointPointCoincidentConstraint)
 class PointPointCoincidentConstraintAdmin(admin.ModelAdmin):
     list_display = ("id", "assembly", "type", "point1", "point2")
-    readonly_fields = ("type",)
+    readonly_fields = ("type", "symbols", "r", "j")
 
 
 @admin.register(PointLineCoincidentConstraint)

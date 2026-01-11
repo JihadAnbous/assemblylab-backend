@@ -1,5 +1,6 @@
-import jax
-import jax.numpy as jnp
+from dataclasses import dataclass
+from jax import grad, jacfwd
+from sympy import Symbol, diff
 
 from django.conf import settings
 from django.db import models
@@ -66,3 +67,17 @@ class Assembly(models.Model):
         for i, p in enumerate(unique_nodes):
             result[p.id] = i
         return result
+
+    @property
+    def constraints(self):
+        return 0
+
+    @property
+    def jacobian_map(self):
+        return 0
+
+    # constraints = []
+    # jacobian_map = []
+    # for c in [c1, c2]:
+    #     constraints.extend(c.r)
+    #     jacobian_map.extend(c.j)

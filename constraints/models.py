@@ -1,5 +1,6 @@
-import jax
-import jax.numpy as jnp
+from dataclasses import dataclass
+from jax import grad, jacfwd
+from sympy import Symbol, diff
 
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -45,12 +46,6 @@ class FixedPointConstraint(Constraint):
         related_name="point_fixedpointconstraint",
     )
 
-    def residual(self, x, y):
-        x_plot = self.point.x_plot
-        y_plot = self.point.y_plot
-        result = (x - x_plot) ** 2 + (y - y_plot) ** 2
-        return result
-
     def __str__(self):
         return f"{self.type}"
 
@@ -62,6 +57,43 @@ class FixedPointConstraint(Constraint):
         self.type = "FixedPointConstraint"
         # Save the instance
         super(FixedPointConstraint, self).save(*args, **kwargs)
+
+    @property
+    def symbols(self):
+        """Returns the specific SymPy symbols for this constraint."""
+        return (
+            Symbol(f"x{self.point.id}"),
+            Symbol(f"y{self.point.id}"),
+        )
+
+    @property
+    def r(self):
+        """The symbolic residual expressions for both x and y."""
+        x, y = self.symbols
+        x_plot = self.point.x_plot
+        y_plot = self.point.y_plot
+        return [x - x_plot, y - y_plot]
+
+    @property
+    def j(self):
+        """Returns a list of dictionaries representing the Jacobian rows."""
+        # Get the point_map from the parent assembly
+        point_map = self.assembly.point_map
+
+        x, y = self.symbols
+        rx, ry = self.r
+
+        # 3. Calculate indices using the point_map
+        idx1_x = 2 * point_map[self.point.id]
+        idx1_y = 2 * point_map[self.point.id] + 1
+
+        result = [
+            {
+                idx1_x: diff(rx, x),
+                idx1_y: diff(ry, y),
+            }
+        ]
+        return result
 
 
 class PointPointCoincidentConstraint(Constraint):
@@ -75,10 +107,6 @@ class PointPointCoincidentConstraint(Constraint):
         on_delete=models.CASCADE,
         related_name="point2_pointpointcoincidentconstraint",
     )
-
-    def residual(self, x1, y1, x2, y2):
-        result = (x1 - x2) ** 2 + (y1 - y2) ** 2
-        return result
 
     def __str__(self):
         return f"{self.type}"
@@ -102,6 +130,63 @@ class PointPointCoincidentConstraint(Constraint):
         self.type = "PointPointCoincidentConstraint"
         # Save the instance
         super(PointPointCoincidentConstraint, self).save(*args, **kwargs)
+
+    @property
+    def symbols(self):
+        """Returns the specific SymPy symbols for this constraint."""
+        return (
+            Symbol(f"x{self.point1.id}"),
+            Symbol(f"x{self.point2.id}"),
+            Symbol(f"y{self.point1.id}"),
+            Symbol(f"y{self.point2.id}"),
+        )
+
+    @property
+    def r(self):
+        """The symbolic residual expressions for both x and y."""
+        x1, x2, y1, y2 = self.symbols
+        return [x1 - x2, y1 - y2]
+
+    @property
+    def j(self):
+        """Returns a list of dictionaries representing the Jacobian rows."""
+        # Get the point_map from the parent assembly
+        point_map = self.assembly.point_map
+
+        x, y = self.symbols
+        rx, ry = self.r
+
+        # 3. Calculate indices using the point_map
+        idx1_x = 2 * point_map[self.point.id]
+        idx1_y = 2 * point_map[self.point.id] + 1
+
+        result = [
+            {
+                idx1_x: diff(rx, x),
+                idx1_y: diff(ry, y),
+            }
+        ]
+        return result
+
+    @property
+    def j(self):
+        """Returns a list of dictionaries representing the Jacobian rows."""
+        # Get the point_map from the parent assembly
+        point_map = self.assembly.point_map
+
+        x1, x2, y1, y2 = self.symbols
+        rx, ry = self.r
+
+        # Mapping indices for x (2*i) and y (2*i + 1)
+        idx1_x = 2 * point_map[self.point1.id]
+        idx2_x = 2 * point_map[self.point2.id]
+        idx1_y = 2 * point_map[self.point1.id] + 1
+        idx2_y = 2 * point_map[self.point2.id] + 1
+
+        return [
+            {idx1_x: diff(rx, x1), idx2_x: diff(rx, x2)},  # Row for x residual
+            {idx1_y: diff(ry, y1), idx2_y: diff(ry, y2)},  # Row for y residual
+        ]
 
 
 class PointLineCoincidentConstraint(Constraint):

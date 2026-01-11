@@ -4,6 +4,6 @@ from django.dispatch import receiver
 from .models import Assembly
 
 
-@receiver(post_save, sender=Assembly)
-def solve_on_assembly_change(sender, instance, **kwargs):
-    instance.solve_geometry()
+# @receiver(post_save, sender=Assembly)
+# def solve_on_assembly_change(sender, instance, **kwargs):
+#     instance.solve_geometry()

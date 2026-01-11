@@ -7,7 +7,7 @@ from jax import grad, jacfwd
 from sympy import Symbol, diff
 
 # Levenberg-Marquardt method (LM method)
-# `python -m django_project.utils.lm_method`
+# `python -m assemblies.utils.solver`
 
 
 # Points
@@ -32,6 +32,8 @@ point_map = {}
 for i, p in enumerate(points):
     point_map[p.id] = i
 print(f"Point map:\n", point_map)
+
+"""Above has been moved to point_map property field of Assembly model"""
 
 # Variables array - FOR DISPLAYING VARIABLES ONLY
 vars = [0] * len(points) * 2
@@ -82,9 +84,12 @@ class CoincidentConstraint:
         ]
 
 
+"""Above has been moved as property fields to Constraint models"""
+
 # Create constraints and jacobian_map
 c1 = CoincidentConstraint(A, B, point_map)
 c2 = CoincidentConstraint(B, C, point_map)
+
 constraints = []
 jacobian_map = []
 for c in [c1, c2]:
