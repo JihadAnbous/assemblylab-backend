@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
 
-from .mysolver import GeometricSolver
+from .utils import solver
 
 # Create your models here.
 
@@ -31,8 +31,38 @@ class Assembly(models.Model):
     def __str__(self):
         return f"{self.name}"
 
-    def solve_geometry(self):
-        solver = GeometricSolver(self, max_iterations=100, tolerance=1e-6)
-        result = solver.solve()
-        print(f"Success: {result['success']}")
-        print(f"Message: {result['message']}")
+    @property
+    def point_map(self):
+        # Import here to avoid circular imports
+        from constraints.models import (
+            FixedPointConstraint,
+            PointPointCoincidentConstraint,
+        )
+
+        # A node is a point/line element
+        unique_nodes = []
+        seen_ids = (
+            set()
+        )  # Data type to store an unordered collection of unique, immutable elements
+
+        # [(model_class, point_fields)]
+        constraint_configs = [
+            (FixedPointConstraint, ["point"]),
+            (PointPointCoincidentConstraint, ["point1", "point2"]),
+        ]
+
+        for model_class, point_fields in constraint_configs:
+            nodes = model_class.objects.filter(assembly=self).select_related(
+                *point_fields
+            )
+
+            for node in nodes:
+                for field_name in point_fields:
+                    p = getattr(node, field_name)
+                    if p and p.id not in seen_ids:
+                        unique_nodes.append(p)
+                        seen_ids.add(p.id)
+        result = {}
+        for i, p in enumerate(unique_nodes):
+            result[p.id] = i
+        return result
