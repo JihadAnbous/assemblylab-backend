@@ -20,9 +20,9 @@ class Point:
 
 
 # Test points
-A = Point(x=-214, y=44, label="A", id=1)
-B = Point(x=3, y=90, label="B", id=7)
-C = Point(x=98, y=-245, label="C", id=11)
+A = Point(x=25, y=49, label="A", id=1)
+B = Point(x=100, y=-899, label="B", id=2)
+C = Point(x=26, y=48, label="C", id=3)
 
 points = (A, B, C)
 print(f"Points:")

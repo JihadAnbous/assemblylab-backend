@@ -96,8 +96,10 @@ class FixedPointConstraint(Constraint):
 
         result = [
             {
-                idx1_x: diff(rx, x),
-                idx1_y: diff(ry, y),
+                idx1_x: diff(rx, x)
+            },
+            {
+                idx1_y: diff(ry, y)
             }
         ]
         return result
