@@ -10,7 +10,7 @@ from sympy import Symbol, diff
 # `python -m django_project.utils.lm_method`
 
 
-# Points
+# constrained_points
 @dataclass
 class Point:
     x: float
@@ -19,23 +19,25 @@ class Point:
     id: int
 
 
-# Test points
-A = Point(x=-214, y=44, label="A", id=1)
-B = Point(x=3, y=90, label="B", id=7)
-C = Point(x=98, y=-245, label="C", id=11)
+# Test constrained_points
+A = Point(x=25, y=49, label="A", id=1)
+B = Point(x=100, y=-899, label="B", id=2)
+C = Point(x=26, y=48, label="C", id=3)
 
-points = (A, B, C)
-print(f"Points:")
-for p in points:
+constrained_points = (A, B, C)
+print(f"constrained_points:")
+for p in constrained_points:
     print(p.label, ": (", p.x, ",", p.y, ")")
 point_map = {}
-for i, p in enumerate(points):
+for i, p in enumerate(constrained_points):
     point_map[p.id] = i
 print(f"Point map:\n", point_map)
 
+"""Above has been moved to point_map property field of Assembly model"""
+
 # Variables array - FOR DISPLAYING VARIABLES ONLY
-vars = [0] * len(points) * 2
-for i, p in enumerate(points):
+vars = [0] * len(constrained_points) * 2
+for i, p in enumerate(constrained_points):
     vars[2 * i] = Symbol(f"x{p.id}")
     vars[2 * i + 1] = Symbol(f"y{p.id}")
 print(f"Variables:\n", vars)
@@ -82,9 +84,12 @@ class CoincidentConstraint:
         ]
 
 
+"""Above has been moved as property fields to Constraint models"""
+
 # Create constraints and jacobian_map
 c1 = CoincidentConstraint(A, B, point_map)
 c2 = CoincidentConstraint(B, C, point_map)
+
 constraints = []
 jacobian_map = []
 for c in [c1, c2]:
@@ -94,9 +99,11 @@ for c in [c1, c2]:
 print(f"Constraints/residuals:\n", constraints)
 print(f"Jacobian map:\n", jacobian_map)
 
+"""Above has been moved as property fields to Assembly model"""
+
 # Create the Jacobian matrix
 rows = len(constraints)
-cols = len(points) * 2
+cols = len(constrained_points) * 2
 jacobian = np.zeros((rows, cols))
 
 # "sparse_row" is each dictionary instance in jacobian_map: (e.g., {0: 1, 2: -1})
@@ -106,6 +113,8 @@ for row_index, sparse_row in enumerate(jacobian_map):
         jacobian[row_index, col_index] = value
 
 print("Jacobian (NumPy):\n", jacobian)
+
+"""Above has been moved as property fields to Assembly model"""
 
 """
 Solver section
@@ -119,7 +128,7 @@ max_iter = 50  # Maximum iterations
 """Initial guess"""
 # Initialise
 beta_list = []
-for p in points:
+for p in constrained_points:
     beta_list.append(p.x)
     beta_list.append(p.y)
 # Convert to NumPy array
@@ -173,11 +182,11 @@ for i in range(max_iter):
         print("Solver has converged.")
         break
 
-"""Update points"""
-for i, p in enumerate(points):
+"""Update constrained_points"""
+for i, p in enumerate(constrained_points):
     p.x = beta[2 * i]
     p.y = beta[2 * i + 1]
 
-print(f"Updated points:")
-for p in points:
+print(f"Updated constrained_points:")
+for p in constrained_points:
     print(p.label, ": (", p.x, ",", p.y, ")")

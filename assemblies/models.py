@@ -7,7 +7,7 @@ from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
 
-from .utils import solver
+from .utils.solver import run_solver
 
 # Create your models here.
 
@@ -34,13 +34,12 @@ class Assembly(models.Model):
         return f"{self.name}"
 
     @property
-    def point_map(self):
+    def constrained_points(self):
         # Import here to avoid circular imports
         from constraints.models import (
             FixedPointConstraint,
             PointPointCoincidentConstraint,
         )
-
         # A node is a point/line element
         unique_nodes = []
         seen_ids = (
@@ -64,8 +63,12 @@ class Assembly(models.Model):
                     if p and p.id not in seen_ids:
                         unique_nodes.append(p)
                         seen_ids.add(p.id)
+        return unique_nodes
+
+    @property
+    def point_map(self):
         result = {}
-        for i, p in enumerate(unique_nodes):
+        for i, p in enumerate(self.constrained_points):
             result[p.id] = i
         return result
 
@@ -114,9 +117,9 @@ class Assembly(models.Model):
                 result[row_index, col_index] = value
         
         return result
+    
+    @property
+    def solve(self):
+        results = run_solver(self)
+        return results
 
-    # constraints = []
-    # jacobian_map = []
-    # for c in [c1, c2]:
-    #     constraints.extend(c.r)
-    #     jacobian_map.extend(c.j)

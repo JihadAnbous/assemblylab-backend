@@ -95,12 +95,8 @@ class FixedPointConstraint(Constraint):
         idx1_y = 2 * point_map[self.point.id] + 1
 
         result = [
-            {
-                idx1_x: diff(rx, x)
-            },
-            {
-                idx1_y: diff(ry, y)
-            }
+            {idx1_x: diff(rx, x)},
+            {idx1_y: diff(ry, y)}
         ]
         return result
 
