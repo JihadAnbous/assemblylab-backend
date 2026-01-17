@@ -1,19 +1,17 @@
-import jax
-import jax.numpy as jnp
 import numpy as np
-
-from dataclasses import dataclass
-from jax import grad, jacfwd
 from sympy import Symbol, diff
 
+from dataclasses import dataclass
+
 """Levenberg-Marquardt method solver"""
+
 
 def run_solver(assembly):
     constrained_points = assembly.constrained_points
     constraints = assembly.constraints
     point_map = assembly.point_map
     jacobian = assembly.jacobian
-    print("Solver initialised.")
+    print("Created jacobian matrix.")
 
     vars = [0] * len(constrained_points) * 2
     for i, p in enumerate(constrained_points):
@@ -78,13 +76,22 @@ def run_solver(assembly):
 
         # If magnitude < tolerance, converged
         if magnitude < tol:
-            print("Solver has converged.")
+            print("Solver has converged.", beta)
             break
 
     """Update constrained_points"""
-    # for i, p in enumerate(constrained_points):
-    #     p.x = beta[2 * i]
-    #     p.y = beta[2 * i + 1]
+    from references.models import ReferencePoint
+
+    points_to_update = []
+    for i, p in enumerate(constrained_points):
+        x = beta[2 * i]
+        y = beta[2 * i + 1]
+        point = ReferencePoint.objects.get(id=p.id)
+        point.x_plot = x
+        point.y_plot = y
+        points_to_update.append(point)
+
+    ReferencePoint.objects.bulk_update(points_to_update, ["x_plot", "y_plot"])
 
     """Transform all components"""
 
