@@ -51,7 +51,7 @@ class PointLineCoincidentConstraintAdmin(admin.ModelAdmin):
 @admin.register(DistanceConstraint)
 class DistanceConstraintAdmin(admin.ModelAdmin):
     list_display = ("id", "assembly", "type", "line", "value")
-    readonly_fields = ("type",)
+    readonly_fields = ("type", "symbols", "r", "j")
 
 
 @admin.register(AngleConstraint)

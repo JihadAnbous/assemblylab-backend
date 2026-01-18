@@ -35,35 +35,42 @@ class Assembly(models.Model):
 
     @property
     def constrained_points(self):
-        # Import here to avoid circular imports
         from constraints.models import (
             FixedPointConstraint,
             PointPointCoincidentConstraint,
+            DistanceConstraint,
         )
-        # A node is a point/line element
+
         unique_nodes = []
-        seen_ids = (
-            set()
-        )  # Data type to store an unordered collection of unique, immutable elements
+        seen_ids = set()
 
-        # [(model_class, point_fields)]
-        constraint_configs = [
-            (FixedPointConstraint, ["point"]),
-            (PointPointCoincidentConstraint, ["point1", "point2"]),
-        ]
+        # Define the logic for extracting points from different constraint types
+        for constraint in FixedPointConstraint.objects.filter(
+            assembly=self
+        ).select_related("point"):
+            self._add_unique_point(constraint.point, unique_nodes, seen_ids)
 
-        for model_class, point_fields in constraint_configs:
-            nodes = model_class.objects.filter(assembly=self).select_related(
-                *point_fields
-            )
+        for constraint in PointPointCoincidentConstraint.objects.filter(
+            assembly=self
+        ).select_related("point1", "point2"):
+            self._add_unique_point(constraint.point1, unique_nodes, seen_ids)
+            self._add_unique_point(constraint.point2, unique_nodes, seen_ids)
 
-            for node in nodes:
-                for field_name in point_fields:
-                    p = getattr(node, field_name)
-                    if p and p.id not in seen_ids:
-                        unique_nodes.append(p)
-                        seen_ids.add(p.id)
+        # Handle DistanceConstraint via the nested 'line' object
+        # select_related('line__point1', 'line__point2') optimizes the DB query
+        for constraint in DistanceConstraint.objects.filter(
+            assembly=self
+        ).select_related("line__point1", "line__point2"):
+            self._add_unique_point(constraint.line.point1, unique_nodes, seen_ids)
+            self._add_unique_point(constraint.line.point2, unique_nodes, seen_ids)
+
         return unique_nodes
+
+    def _add_unique_point(self, point, unique_nodes, seen_ids):
+        """Helper to avoid duplicating code"""
+        if point and point.id not in seen_ids:
+            unique_nodes.append(point)
+            seen_ids.add(point.id)
 
     @property
     def point_map(self):
@@ -78,14 +85,15 @@ class Assembly(models.Model):
         Returns the mathematical residuals (r) for all specific constraints.
         """
         from constraints.models import Constraint
+
         # Get all base constraints
         base_constraints = Constraint.objects.filter(assembly=self)
-        
+
         result = []
         for base in base_constraints:
             specific = base.get_specific_instance()
-            if specific and hasattr(specific, 'r'):
-                result.extend(specific.r) 
+            if specific and hasattr(specific, "r"):
+                result.extend(specific.r)
         return result
 
     @property
@@ -94,32 +102,56 @@ class Assembly(models.Model):
         Returns the jacobian (j) for all specific constraints.
         """
         from constraints.models import Constraint
+
         # Get all base constraints
         base_constraints = Constraint.objects.filter(assembly=self)
-        
+
         result = []
         for base in base_constraints:
             specific = base.get_specific_instance()
-            if specific and hasattr(specific, 'j'):
-                result.extend(specific.j) 
+            if specific and hasattr(specific, "j"):
+                result.extend(specific.j)
         return result
 
+    # Need to move this into the solver instead. Needs to be at the top of the loop to recalculate using beta - new values.
     @property
     def jacobian(self):
         rows = len(self.constraints)
         cols = len(self.point_map) * 2
         result = np.zeros((rows, cols))
 
-        # "sparse_row" is each dictionary instance in jacobian_map: (e.g., {0: 1, 2: -1})
-        # "value" is the derivative value of each dictionary instance
+        # We need a dictionary that maps symbols to their current database values
+        # e.g., { Symbol('x1'): 10.5, Symbol('y1'): 20.0, ... }
+        context = {}
+        for point in self.constrained_points:
+            x_sym, y_sym = Symbol(f"x{point.pk}"), Symbol(f"y{point.pk}")
+            context[x_sym] = point.x  # Assuming your Point model has an 'x' field
+            context[y_sym] = point.y  # Assuming your Point model has a 'y' field
+
         for row_index, sparse_row in enumerate(self.jacobian_map):
-            for col_index, value in sparse_row.items():
-                result[row_index, col_index] = value
-        
+            for col_index, symbolic_value in sparse_row.items():
+                # Use .subs() to replace symbols with numbers,
+                # then float() to convert the SymPy number to a Python float
+                numeric_value = float(symbolic_value.subs(context))
+                result[row_index, col_index] = numeric_value
+
         return result
-    
+
+    # @property
+    # def jacobian(self):
+    #     rows = len(self.constraints)
+    #     cols = len(self.point_map) * 2
+    #     result = np.zeros((rows, cols))
+
+    #     # "sparse_row" is each dictionary instance in jacobian_map: (e.g., {0: 1, 2: -1})
+    #     # "value" is the derivative value of each dictionary instance
+    #     for row_index, sparse_row in enumerate(self.jacobian_map):
+    #         for col_index, value in sparse_row.items():
+    #             result[row_index, col_index] = value
+
+    #     return result
+
     @property
     def solve(self):
         results = run_solver(self)
         return results
-

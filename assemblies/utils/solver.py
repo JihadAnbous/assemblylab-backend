@@ -11,7 +11,7 @@ def run_solver(assembly):
     constraints = assembly.constraints
     point_map = assembly.point_map
     jacobian = assembly.jacobian
-    print("Created jacobian matrix.")
+    print("Initialised jacobian.")
 
     vars = [0] * len(constrained_points) * 2
     for i, p in enumerate(constrained_points):
@@ -19,7 +19,7 @@ def run_solver(assembly):
         vars[2 * i + 1] = Symbol(f"y{p.id}")
     # Initial setup
     lam = 0.1  # Damping factor
-    tol = 1e-8  # Convergence tolerance
+    tol = 1e-10  # Convergence tolerance
     max_iter = 50  # Maximum iterations
     print("Variables", vars)
 
@@ -35,6 +35,8 @@ def run_solver(assembly):
 
     """Solver loop"""
     for i in range(max_iter):
+        jacobian = assembly.jacobian
+        print("Recalculated jacobian.")
         # Dictionary that maps the variables with their values
         variable_map = {}
         for index, symbol in enumerate(vars):
@@ -92,6 +94,7 @@ def run_solver(assembly):
         points_to_update.append(point)
 
     ReferencePoint.objects.bulk_update(points_to_update, ["x_plot", "y_plot"])
+    print("Point coordinates updated.")
 
     """Transform all components"""
 

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from jax import grad, jacfwd
-from sympy import Symbol, diff
+from sympy import Symbol, diff, sqrt
 
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -64,13 +64,12 @@ class FixedPointConstraint(Constraint):
         # Save the instance
         super(FixedPointConstraint, self).save(*args, **kwargs)
 
-
     @property
     def symbols(self):
         """Returns the specific SymPy symbols for this constraint."""
         return (
-            Symbol(f"x{self.point.id}"),
-            Symbol(f"y{self.point.id}"),
+            Symbol(f"x{self.point.pk}"),
+            Symbol(f"y{self.point.pk}"),
         )
 
     @property
@@ -91,13 +90,10 @@ class FixedPointConstraint(Constraint):
         rx, ry = self.r
 
         # 3. Calculate indices using the point_map
-        idx1_x = 2 * point_map[self.point.id]
-        idx1_y = 2 * point_map[self.point.id] + 1
+        idx_x = 2 * point_map[self.point.pk]
+        idx_y = 2 * point_map[self.point.pk] + 1
 
-        result = [
-            {idx1_x: diff(rx, x)},
-            {idx1_y: diff(ry, y)}
-        ]
+        result = [{idx_x: diff(rx, x)}, {idx_y: diff(ry, y)}]
         return result
 
 
@@ -140,10 +136,10 @@ class PointPointCoincidentConstraint(Constraint):
     def symbols(self):
         """Returns the specific SymPy symbols for this constraint."""
         return (
-            Symbol(f"x{self.point1.id}"),
-            Symbol(f"x{self.point2.id}"),
-            Symbol(f"y{self.point1.id}"),
-            Symbol(f"y{self.point2.id}"),
+            Symbol(f"x{self.point1.pk}"),
+            Symbol(f"x{self.point2.pk}"),
+            Symbol(f"y{self.point1.pk}"),
+            Symbol(f"y{self.point2.pk}"),
         )
 
     @property
@@ -158,35 +154,14 @@ class PointPointCoincidentConstraint(Constraint):
         # Get the point_map from the parent assembly
         point_map = self.assembly.point_map
 
-        x, y = self.symbols
-        rx, ry = self.r
-
-        # 3. Calculate indices using the point_map
-        idx1_x = 2 * point_map[self.point.id]
-        idx1_y = 2 * point_map[self.point.id] + 1
-
-        result = [
-            {
-                idx1_x: diff(rx, x),
-                idx1_y: diff(ry, y),
-            }
-        ]
-        return result
-
-    @property
-    def j(self):
-        """Returns a list of dictionaries representing the Jacobian rows."""
-        # Get the point_map from the parent assembly
-        point_map = self.assembly.point_map
-
         x1, x2, y1, y2 = self.symbols
         rx, ry = self.r
 
         # Mapping indices for x (2*i) and y (2*i + 1)
-        idx1_x = 2 * point_map[self.point1.id]
-        idx2_x = 2 * point_map[self.point2.id]
-        idx1_y = 2 * point_map[self.point1.id] + 1
-        idx2_y = 2 * point_map[self.point2.id] + 1
+        idx1_x = 2 * point_map[self.point1.pk]
+        idx2_x = 2 * point_map[self.point2.pk]
+        idx1_y = 2 * point_map[self.point1.pk] + 1
+        idx2_y = 2 * point_map[self.point2.pk] + 1
 
         return [
             {idx1_x: diff(rx, x1), idx2_x: diff(rx, x2)},  # Row for x residual
@@ -232,12 +207,6 @@ class DistanceConstraint(Constraint):
     )
     value = models.FloatField(validators=[MinValueValidator(0.0)])
 
-    def residual(self, x1, y1, x2, y2):
-        distance_squared = (x2 - x1) ** 2 + (y2 - y1) ** 2
-        target_squared = self.value**2
-        result = (distance_squared - target_squared) ** 2
-        return result
-
     def __str__(self):
         return f"{self.type}"
 
@@ -249,6 +218,48 @@ class DistanceConstraint(Constraint):
         self.type = "DistanceConstraint"
         # Save the instance
         super(DistanceConstraint, self).save(*args, **kwargs)
+
+    @property
+    def symbols(self):
+        """Returns the specific SymPy symbols for this constraint."""
+        return (
+            Symbol(f"x{self.line.point1.pk}"),
+            Symbol(f"x{self.line.point2.pk}"),
+            Symbol(f"y{self.line.point1.pk}"),
+            Symbol(f"y{self.line.point2.pk}"),
+        )
+
+    @property
+    def r(self):
+        """The symbolic residual expression for the distance constraint."""
+        x1, x2, y1, y2 = self.symbols
+        distance = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        result = distance - self.value
+        return [result]
+
+    @property
+    def j(self):
+        """Returns a list of dictionaries representing the Jacobian rows."""
+        # Get the point_map from the parent assembly
+        point_map = self.assembly.point_map
+
+        x1, x2, y1, y2 = self.symbols
+        r = self.r[0]
+
+        # Mapping indices for x (2*i) and y (2*i + 1)
+        idx1_x = 2 * point_map[self.line.point1.pk]
+        idx2_x = 2 * point_map[self.line.point2.pk]
+        idx1_y = 2 * point_map[self.line.point1.pk] + 1
+        idx2_y = 2 * point_map[self.line.point2.pk] + 1
+
+        return [
+            {
+                idx1_x: diff(r, x1),
+                idx2_x: diff(r, x2),
+                idx1_y: diff(r, y1),
+                idx2_y: diff(r, y2),
+            }
+        ]
 
 
 class AngleConstraint(Constraint):
