@@ -5,24 +5,22 @@ from sympy import Symbol
 def run_solver(assembly):
     from references.models import ReferencePoint
 
-    # 1. Gather structural data
+    # Gather data
     constrained_points = assembly.constrained_points
-    point_map = assembly.point_map
     constraints_expressions = assembly.constraints
 
-    # Pre-fetch the symbolic Jacobian map once (the symbolic derivatives don't change)
-    # This assumes assembly.jacobian_map returns: [{col_idx: expression}, ...]
-    symbolic_jacobian_map = assembly.jacobian_map
+    # Fetch the Jacobian map
+    jacobian_map = assembly.jacobian_map
 
-    # 2. Setup variables
+    # Setup variables
     # We create a list of SymPy symbols that correspond to our beta indices
     vars_symbols = []
     for p in constrained_points:
         vars_symbols.append(Symbol(f"x{p.id}"))
         vars_symbols.append(Symbol(f"y{p.id}"))
 
-    # 3. Initial guess (beta)
-    beta = np.array([p.x_plot for p in constrained_points for p in [p]], dtype=float)
+    # Initial guess (beta)
+    beta = np.array([p.x_plot for p in constrained_points for p in [p]])
     # Flattening x,y into beta: [x1, y1, x2, y2...]
     beta_list = []
     for p in constrained_points:
@@ -48,7 +46,7 @@ def run_solver(assembly):
         # --- CALCULATE JACOBIAN (J) ---
         # We build the matrix based on current beta values
         J = np.zeros((num_constraints, num_vars))
-        for row_idx, sparse_row in enumerate(symbolic_jacobian_map):
+        for row_idx, sparse_row in enumerate(jacobian_map):
             for col_idx, symbolic_deriv in sparse_row.items():
                 # Substitute current beta values into the derivative expression
                 J[row_idx, col_idx] = float(symbolic_deriv.subs(variable_map))

@@ -32,6 +32,8 @@ class FixedPointConstraintAdmin(admin.ModelAdmin):
         "assembly",
         "type",
         "point",
+        "x_value",
+        "y_value",
     )
     readonly_fields = ("type", "symbols", "r", "j")
 

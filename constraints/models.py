@@ -51,6 +51,8 @@ class FixedPointConstraint(Constraint):
         on_delete=models.CASCADE,
         related_name="point_fixedpointconstraint",
     )
+    x_value = models.FloatField()
+    y_value = models.FloatField()
 
     def __str__(self):
         return f"{self.type}"
@@ -76,9 +78,9 @@ class FixedPointConstraint(Constraint):
     def r(self):
         """The symbolic residual expressions for both x and y."""
         x, y = self.symbols
-        x_plot = self.point.x_plot
-        y_plot = self.point.y_plot
-        return [x - x_plot, y - y_plot]
+        x_value = self.x_value
+        y_value = self.y_value
+        return [x - x_value, y - y_value]
 
     @property
     def j(self):
