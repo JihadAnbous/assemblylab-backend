@@ -7,6 +7,7 @@ from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
 
+# from .utils.solver import run_solver
 from .utils.solver import run_solver
 
 # Create your models here.
@@ -25,7 +26,6 @@ class Assembly(models.Model):
     status = models.CharField(
         max_length=100, choices=ASSEMBLY_STATUS_CHOICES, editable=False
     )
-    solved = models.BooleanField(default=False, editable=False)
 
     class Meta:
         verbose_name_plural = "Assemblies"
@@ -113,29 +113,10 @@ class Assembly(models.Model):
                 result.extend(specific.j)
         return result
 
-    # Need to move this into the solver instead. Needs to be at the top of the loop to recalculate using beta - new values.
     @property
-    def jacobian(self):
-        rows = len(self.constraints)
-        cols = len(self.point_map) * 2
-        result = np.zeros((rows, cols))
-
-        # We need a dictionary that maps symbols to their current database values
-        # e.g., { Symbol('x1'): 10.5, Symbol('y1'): 20.0, ... }
-        context = {}
-        for point in self.constrained_points:
-            x_sym, y_sym = Symbol(f"x{point.pk}"), Symbol(f"y{point.pk}")
-            context[x_sym] = point.x  # Assuming your Point model has an 'x' field
-            context[y_sym] = point.y  # Assuming your Point model has a 'y' field
-
-        for row_index, sparse_row in enumerate(self.jacobian_map):
-            for col_index, symbolic_value in sparse_row.items():
-                # Use .subs() to replace symbols with numbers,
-                # then float() to convert the SymPy number to a Python float
-                numeric_value = float(symbolic_value.subs(context))
-                result[row_index, col_index] = numeric_value
-
-        return result
+    def solve(self):
+        results = run_solver(self)
+        return results
 
     # @property
     # def jacobian(self):
@@ -150,8 +131,3 @@ class Assembly(models.Model):
     #             result[row_index, col_index] = value
 
     #     return result
-
-    @property
-    def solve(self):
-        results = run_solver(self)
-        return results

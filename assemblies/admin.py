@@ -46,4 +46,10 @@ class AssemblyAdmin(admin.ModelAdmin):
         "created_by",
         "created_at",
     )
-    readonly_fields = ("status", "solved", "constrained_points", "point_map", "constraints", "jacobian_map", "jacobian", "solve")
+    readonly_fields = (
+        "status",
+        "constrained_points",
+        "point_map",
+        "constraints",
+        "solve",
+    )

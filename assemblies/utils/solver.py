@@ -1,101 +1,83 @@
 import numpy as np
-from sympy import Symbol, diff
-
-from dataclasses import dataclass
-
-"""Levenberg-Marquardt method solver"""
+from sympy import Symbol
 
 
 def run_solver(assembly):
-    constrained_points = assembly.constrained_points
-    constraints = assembly.constraints
-    point_map = assembly.point_map
-    jacobian = assembly.jacobian
-    print("Initialised jacobian.")
-
-    vars = [0] * len(constrained_points) * 2
-    for i, p in enumerate(constrained_points):
-        vars[2 * i] = Symbol(f"x{p.id}")
-        vars[2 * i + 1] = Symbol(f"y{p.id}")
-    # Initial setup
-    lam = 0.1  # Damping factor
-    tol = 1e-10  # Convergence tolerance
-    max_iter = 50  # Maximum iterations
-    print("Variables", vars)
-
-    """Initial guess"""
-    # Initialise
-    beta_list = []
-    for p in constrained_points:
-        beta_list.append(p.x_plot)
-        beta_list.append(p.y_plot)
-    # Convert to NumPy array
-    beta = np.array(beta_list)
-    print(f"Initial beta array: {beta_list}")
-
-    """Solver loop"""
-    for i in range(max_iter):
-        jacobian = assembly.jacobian
-        print("Recalculated jacobian.")
-        # Dictionary that maps the variables with their values
-        variable_map = {}
-        for index, symbol in enumerate(vars):
-            # {x1: 24, y1: -45, etc.}
-            variable_map[symbol] = beta[index]
-
-        # Calculate the residuals
-        residuals = []
-        for expression in constraints:
-            # expression.subs(old, new)
-            # Swaps each constraint's variable symbol with their respective values in variable_map
-            numerical_expression = expression.subs(variable_map)
-            # Convert the SymPy result to a standard float
-            numerical_value = float(numerical_expression)
-            residuals.append(numerical_value)
-        residuals = np.array(residuals)
-
-        # Calculate J transposed times J
-        # This creates a square matrix (Hessian approximation)
-        jtj = jacobian.T @ jacobian
-
-        # Add the damping factor (lambda) to the diagonal
-        cols = len(point_map) * 2
-        damping_matrix = lam * np.eye(cols)
-        lhs = jtj + damping_matrix
-
-        # Calculate J transposed times the residuals
-        rhs = -jacobian.T @ residuals
-
-        # (J^T J + λI) * delta_beta = -J^T * r -> Solve for delta_beta
-        delta_beta = np.linalg.solve(lhs, rhs)
-
-        # Update current guess with delta_beta
-        beta = beta + delta_beta
-
-        # Determine magnitude for convergence
-        magnitude = np.linalg.norm(delta_beta)
-        print(f"Iteration {i}: Magnitude = {magnitude}")
-
-        # If magnitude < tolerance, converged
-        if magnitude < tol:
-            print("Solver has converged.", beta)
-            break
-
-    """Update constrained_points"""
     from references.models import ReferencePoint
 
+    # 1. Gather structural data
+    constrained_points = assembly.constrained_points
+    point_map = assembly.point_map
+    constraints_expressions = assembly.constraints
+
+    # Pre-fetch the symbolic Jacobian map once (the symbolic derivatives don't change)
+    # This assumes assembly.jacobian_map returns: [{col_idx: expression}, ...]
+    symbolic_jacobian_map = assembly.jacobian_map
+
+    # 2. Setup variables
+    # We create a list of SymPy symbols that correspond to our beta indices
+    vars_symbols = []
+    for p in constrained_points:
+        vars_symbols.append(Symbol(f"x{p.id}"))
+        vars_symbols.append(Symbol(f"y{p.id}"))
+
+    # 3. Initial guess (beta)
+    beta = np.array([p.x_plot for p in constrained_points for p in [p]], dtype=float)
+    # Flattening x,y into beta: [x1, y1, x2, y2...]
+    beta_list = []
+    for p in constrained_points:
+        beta_list.extend([float(p.x_plot), float(p.y_plot)])
+    beta = np.array(beta_list)
+
+    # Constants
+    lam = 0.1
+    tol = 1e-10
+    max_iter = 50
+    num_vars = len(beta)
+    num_constraints = len(constraints_expressions)
+
+    for i in range(max_iter):
+        # Create the mapping for SymPy substitution using CURRENT beta values
+        variable_map = {vars_symbols[k]: beta[k] for k in range(num_vars)}
+
+        # --- CALCULATE RESIDUALS (r) ---
+        residuals = np.zeros(num_constraints)
+        for idx, expr in enumerate(constraints_expressions):
+            residuals[idx] = float(expr.subs(variable_map))
+
+        # --- CALCULATE JACOBIAN (J) ---
+        # We build the matrix based on current beta values
+        J = np.zeros((num_constraints, num_vars))
+        for row_idx, sparse_row in enumerate(symbolic_jacobian_map):
+            for col_idx, symbolic_deriv in sparse_row.items():
+                # Substitute current beta values into the derivative expression
+                J[row_idx, col_idx] = float(symbolic_deriv.subs(variable_map))
+
+        # --- LEVENBERG-MARQUARDT STEP ---
+        jtj = J.T @ J
+        damping = lam * np.eye(num_vars)
+        rhs = -J.T @ residuals
+
+        try:
+            delta_beta = np.linalg.solve(jtj + damping, rhs)
+        except np.linalg.LinAlgError:
+            print("Singular matrix encountered.")
+            break
+
+        beta += delta_beta
+
+        magnitude = np.linalg.norm(delta_beta)
+        if magnitude < tol:
+            print(f"Converged in {i} iterations.")
+            break
+
+    # 4. Final Database Update
     points_to_update = []
-    for i, p in enumerate(constrained_points):
-        x = beta[2 * i]
-        y = beta[2 * i + 1]
-        point = ReferencePoint.objects.get(id=p.id)
-        point.x_plot = x
-        point.y_plot = y
-        points_to_update.append(point)
+    for idx, p in enumerate(constrained_points):
+        p_db = ReferencePoint.objects.get(id=p.id)
+        p_db.x_plot = beta[2 * idx]
+        p_db.y_plot = beta[2 * idx + 1]
+        points_to_update.append(p_db)
 
     ReferencePoint.objects.bulk_update(points_to_update, ["x_plot", "y_plot"])
-    print("Point coordinates updated.")
-
-    """Transform all components"""
-
     return beta

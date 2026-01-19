@@ -34,7 +34,6 @@ class Reference(models.Model):
     )
     type = models.CharField(max_length=50, editable=False)
     label = models.CharField(max_length=100, blank=True, null=True)
-    fixed = models.BooleanField(default=False, editable=False)
 
     def __str__(self):
         return f"{self.label}"
@@ -57,6 +56,8 @@ class ReferenceComponent(Reference):
     component = models.ForeignKey(
         Component, on_delete=models.CASCADE, related_name="component_referencecomponent"
     )
+    dof = models.PositiveIntegerField(default=3, editable=False)
+    # every time a dof from its points is removed, it loses a dof too.
 
     def transform(self, Sx, Sy, angle):
         # Retrieve all ReferencePoint instances for this ReferenceComponent
@@ -114,22 +115,9 @@ class ReferencePoint(Reference):
         blank=True,
         null=True,
     )
-    x_plot = models.FloatField()  # This is never null and are always current
-    y_plot = models.FloatField()  # This is never null and are always current
-
-    @property
-    def x(self):
-        if self.fixed:
-            return self.x_plot
-        else:
-            return None
-
-    @property
-    def y(self):
-        if self.fixed:
-            return self.y_plot
-        else:
-            return None
+    x_plot = models.FloatField()  # This is never null and is always current
+    y_plot = models.FloatField()  # This is never null and is always current
+    dof = models.PositiveIntegerField(default=2, editable=False)
 
     # Used for transform function and constraints
     @property
