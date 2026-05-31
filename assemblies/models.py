@@ -75,8 +75,8 @@ class Assembly(models.Model):
     @property
     def point_map(self):
         result = {}
-        for i, p in enumerate(self.constrained_points):
-            result[p.id] = i
+        for index, object in enumerate(self.constrained_points):
+            result[object.id] = index
         return result
 
     @property
