@@ -1,3 +1,16 @@
+# Introduction
+This project is designed to allow users to create 2D component templates comprised of points via coordinates. 
+
+For example, a user may create a "Quadrilateral" template (component template) with points A, B, C & D. Users would then use this template to create multiple quadrilaterals (components) by simply giving the component a name and each point some x and y coordinates. A point may be geometrical (pins or joints) or observational (centres of gravity).
+
+It should then allow the user to create an assembly via fixing a component and adding coincident, distance and angle constraints between 2 or more components. Upon creating such an assembly, the user will also be able to create "studies" - whereby variable constraints such as a variable distance constraint (minimum distance, maximum distance & distance increment) or variable angle constraint (minimum angle, maximum angle & angle increment) can be added which would allow the user to loop the assembly through multiple different positions.
+
+The most powerful feature is the "References" feature. A reference allows a user to monitor a dimension, coordinate or position. After allowing the assembly to solve for every position/increment, a table is generated that displays the results of every reference at every respective variable constraint increment.
+
+This software should come in handy for engineers that need to perform multiple kinematic studies for complex assemblies that may be simplified in 2D space - especially simulations where centres of gravity are crucial.
+
+
+
 # Docker
 
 Create an image:  
